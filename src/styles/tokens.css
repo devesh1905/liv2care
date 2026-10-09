@@ -1,0 +1,88 @@
+:root {
+  /* Liv2care clinical palette (from the prototype). Kanya's design/tokens.css replaces these when it lands. */
+  --background: #f3f6fa;
+  --foreground: #16273a;
+  --card: #ffffff;
+  --card-foreground: #16273a;
+  --popover: #ffffff;
+  --popover-foreground: #16273a;
+  --primary: #0b63b6;
+  --primary-foreground: #ffffff;
+  --secondary: #e4effa;
+  --secondary-foreground: #16273a;
+  --muted: #e9eff5;
+  --muted-foreground: #566879;
+  --accent: #e4effa;
+  --accent-foreground: #16273a;
+  --destructive: #c0282d;
+  --border: #d9e2ec;
+  --input: #d9e2ec;
+  --ring: #0b63b6;
+  --chart-1: #0b63b6;
+  --chart-2: #1b7f4b;
+  --chart-3: #9a5b00;
+  --chart-4: #c0282d;
+  --chart-5: #566879;
+  --radius: 0.625rem;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #16273a;
+  --sidebar-primary: #0b63b6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e4effa;
+  --sidebar-accent-foreground: #16273a;
+  --sidebar-border: #d9e2ec;
+  --sidebar-ring: #0b63b6;
+
+  /* Status colours used on pills and timelines */
+  --ok: #1b7f4b;
+  --ok-soft: #e1f3e9;
+  --warn: #9a5b00;
+  --warn-soft: #fcefd6;
+  --bad: #c0282d;
+  --bad-soft: #fbe4e4;
+  --info: #0b63b6;
+  --info-soft: #e4effa;
+}
+
+.dark {
+  --background: #0c1621;
+  --foreground: #e6eef5;
+  --card: #13222f;
+  --card-foreground: #e6eef5;
+  --popover: #13222f;
+  --popover-foreground: #e6eef5;
+  --primary: #5eaef5;
+  --primary-foreground: #06192b;
+  --secondary: #16324d;
+  --secondary-foreground: #e6eef5;
+  --muted: #1a2c3b;
+  --muted-foreground: #9bafc1;
+  --accent: #16324d;
+  --accent-foreground: #e6eef5;
+  --destructive: #f28b8e;
+  --border: #253b4e;
+  --input: #253b4e;
+  --ring: #5eaef5;
+  --chart-1: #5eaef5;
+  --chart-2: #5ed19b;
+  --chart-3: #f0b35c;
+  --chart-4: #f28b8e;
+  --chart-5: #9bafc1;
+  --sidebar: #13222f;
+  --sidebar-foreground: #e6eef5;
+  --sidebar-primary: #5eaef5;
+  --sidebar-primary-foreground: #06192b;
+  --sidebar-accent: #16324d;
+  --sidebar-accent-foreground: #e6eef5;
+  --sidebar-border: #253b4e;
+  --sidebar-ring: #5eaef5;
+
+  --ok: #5ed19b;
+  --ok-soft: #14352a;
+  --warn: #f0b35c;
+  --warn-soft: #3a2b12;
+  --bad: #f28b8e;
+  --bad-soft: #3d2022;
+  --info: #5eaef5;
+  --info-soft: #16324d;
+}
