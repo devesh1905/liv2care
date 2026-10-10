@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { JourneyTable, type JourneyRow } from "@/components/journey-table";
 import { requireRole } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
+import { EnrolForm } from "./enrol-form";
 
 export const metadata = { title: "Treating doctor · Liv2care" };
 
@@ -19,6 +20,8 @@ export default function Page() {
   return (
     <>
       <h1 className="text-2xl font-extrabold tracking-tight">Treating doctor</h1>
+      <EnrolForm />
+      <h2 className="text-lg font-extrabold">Your patients</h2>
       <Suspense fallback={<p role="status" className="text-muted-foreground">Loading…</p>}>
         <Journeys />
       </Suspense>
