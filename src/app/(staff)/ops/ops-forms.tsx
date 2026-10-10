@@ -4,7 +4,7 @@ import { BellRing, X } from "lucide-react";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/field";
-import { markVisitMissed, sendReminder, type OpsState } from "./actions";
+import { markVisitMissed, runOverdueReminders, sendReminder, type OpsState } from "./actions";
 
 type Action = (prev: OpsState, form: FormData) => Promise<OpsState>;
 
@@ -33,3 +33,15 @@ export const MissedButton = ({ journeyId }: { journeyId: string }) => (
     Mark missed
   </OneButton>
 );
+
+export function RunRemindersButton() {
+  const [, formAction, pending] = useActionState<OpsState, FormData>(runOverdueReminders, {});
+  return (
+    <form action={formAction}>
+      <Button type="submit" variant="outline" disabled={pending}>
+        <BellRing aria-hidden="true" />
+        {pending ? "Sending…" : "Remind everyone overdue"}
+      </Button>
+    </form>
+  );
+}

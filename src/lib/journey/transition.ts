@@ -182,7 +182,8 @@ export function supabaseJourneyStore(admin: SupabaseClient): JourneyStore {
         p_expected_missed: req.expected.missed,
         p_to_stage: req.next.stage,
         p_to_missed: req.next.missed,
-        p_actor: req.actor.role === "patient" ? null : req.actor.id,
+        // patients and the scheduled job are not profiles, so the audit row stores no user id for them
+        p_actor: req.actor.role === "patient" || req.actor.role === "system" ? null : req.actor.id,
         p_actor_role: req.actor.role,
         p_detail: req.detail,
         p_next_step: req.nextStep,

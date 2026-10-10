@@ -10,7 +10,7 @@ import { statusOf } from "@/lib/journey/derived";
 import { STAGE, STAGE_LABEL, type Stage } from "@/lib/journey/stages";
 import { actorLabel, dueText, eventLabel, maskLinks, percent } from "@/lib/ops/format";
 import { createClient } from "@/lib/supabase/server";
-import { MissedButton, ReminderButton } from "./ops-forms";
+import { MissedButton, ReminderButton, RunRemindersButton } from "./ops-forms";
 
 export const metadata = { title: "Operations" };
 
@@ -46,7 +46,10 @@ type MessageRow = { id: string; journey_id: string; channel: string; body: strin
 async function Dashboard({ searchParams }: { searchParams: PageProps<"/ops">["searchParams"] }) {
   await requireRole("ops");
   const raw = (await searchParams).notice;
-  const notice = NOTICES[Array.isArray(raw) ? raw[0] : (raw ?? "")];
+  const key = Array.isArray(raw) ? raw[0] : (raw ?? "");
+  const sentRaw = (await searchParams).sent;
+  const sent = Math.min(Math.max(Number(Array.isArray(sentRaw) ? sentRaw[0] : sentRaw) || 0, 0), 999);
+  const notice = key === "ran" ? `Overdue reminders sent: ${sent} (simulated).` : NOTICES[key];
   const supabase = await createClient();
   const now = new Date().getTime();
 
@@ -103,9 +106,12 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/ops">["se
       </div>
 
       <section aria-labelledby="pending" className="flex flex-col gap-3">
-        <h2 id="pending" className="font-heading text-xl font-extrabold">
-          Pending actions
-        </h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 id="pending" className="font-heading text-xl font-extrabold">
+            Pending actions
+          </h2>
+          <RunRemindersButton />
+        </div>
         {pending.length === 0 && <p className="rounded-xl border border-dashed bg-card p-6 text-center text-muted-foreground">Nothing is waiting.</p>}
         <div className="grid gap-3 lg:grid-cols-2">
           {pending.map((t) => {

@@ -8,6 +8,7 @@ import { nextAction } from "@/lib/journey/derived";
 import { transitionJourney } from "@/lib/journey/server";
 import type { Stage } from "@/lib/journey/stages";
 import { templates } from "@/lib/messages/templates";
+import { sendOverdueReminders } from "@/lib/ops/reminders";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,4 +49,12 @@ export async function markVisitMissed(_prev: OpsState, form: FormData): Promise<
   if (!result.ok) return { error: result.error.message };
   await sendBookingLink(createAdminClient(), ctx.journeyId, templates.missed, "SMS");
   redirect("/ops?notice=missed");
+}
+
+/** The same job the daily schedule runs: reminds every patient whose pending action is overdue. */
+export async function runOverdueReminders(): Promise<OpsState> {
+  const user = await requireRole("ops");
+  revalidatePath("/ops");
+  const run = await sendOverdueReminders(createAdminClient(), { id: user.id, role: "ops" }, new Date().getTime());
+  redirect(`/ops?notice=ran&sent=${run.sent}`);
 }

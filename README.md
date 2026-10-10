@@ -57,7 +57,7 @@ CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests and build, and 
 
 1. Link the repo to the hosted project and apply migrations, from this folder: `npx supabase login`, `npx supabase link --project-ref <ref>`, `npx supabase db push --dry-run`, then `npx supabase db push`.
 2. Never load `supabase/seed.sql` on a hosted project. Create the five staff users in the Supabase dashboard (Authentication → Users, auto-confirm, your own strong passwords), turn off public sign-ups, then run `supabase/hosted-setup.sql` in the SQL editor to add partners, slots and roles.
-3. In Vercel set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL` (the public site address, used in booking links) and optionally `GEMINI_API_KEY`. Leave `DEMO_LOGINS` unset. Redeploy after changing variables.
+3. In Vercel set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_APP_URL` (the public site address, used in booking links) and optionally `GEMINI_API_KEY`. Leave `DEMO_LOGINS` unset. To switch on the daily overdue-reminder job (`vercel.json`), set `CRON_SECRET` to a long random value; without it the job answers 503. Redeploy after changing variables.
 
 ## The booking helper (Gemini)
 

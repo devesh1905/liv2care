@@ -54,7 +54,7 @@ describe("disallowed transitions", () => {
       { type: "CHOOSE_NEXT_STEP", step: "routine" },
       { type: "MARK_ATTENDED" },
     ];
-    const roles: Role[] = ["doctor", "clinician", "lab", "centre", "ops", "patient"];
+    const roles: Role[] = ["doctor", "clinician", "lab", "centre", "ops", "patient", "system"];
     const bookable: Stage[] = [STAGE.ORDERED, STAGE.VCTE_LINK, STAGE.NEXT_LINK];
     for (const event of events) {
       for (const role of roles) {
@@ -120,6 +120,17 @@ describe("missed appointments", () => {
   });
 });
 
+describe("the scheduled reminder job", () => {
+  const job: Actor = { id: "reminder-job", role: "system" };
+  it("may send reminders on open journeys, including missed ones, and nothing else", () => {
+    expect(decide(at(STAGE.ORDERED), { type: "SEND_REMINDER" }, job).ok).toBe(true);
+    expect(decide(at(STAGE.LAB_BOOKED, true), { type: "SEND_REMINDER" }, job).ok).toBe(true);
+    expect(decide(at(STAGE.COMPLETE), { type: "SEND_REMINDER" }, job)).toMatchObject({ ok: false, error: { code: "terminal" } });
+    expect(decide(at(STAGE.REVIEWED), { type: "APPROVE_VCTE" }, job)).toMatchObject({ ok: false, error: { code: "wrong_role" } });
+    expect(decide(at(STAGE.LAB_BOOKED), { type: "MARK_MISSED" }, job)).toMatchObject({ ok: false, error: { code: "wrong_role" } });
+  });
+});
+
 describe("starting a journey", () => {
   it("the doctor picks Option 1 (existing report) or Option 2 (order tests)", () => {
     expect(decideStart("existing_report", actor("doctor"))).toMatchObject({ ok: true, next: { stage: STAGE.REPORT_IN } });
@@ -127,7 +138,7 @@ describe("starting a journey", () => {
   });
 
   it("nobody else can", () => {
-    for (const r of ["clinician", "lab", "centre", "ops", "patient"] as Role[]) {
+    for (const r of ["clinician", "lab", "centre", "ops", "patient", "system"] as Role[]) {
       expect(decideStart("order_tests", actor(r))).toMatchObject({ ok: false, error: { code: "wrong_role" } });
     }
   });
