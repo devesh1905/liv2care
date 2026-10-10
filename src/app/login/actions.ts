@@ -39,8 +39,12 @@ export async function demoLogin(form: FormData) {
   if (error) redirect("/login?demo=failed");
 }
 
+// TEMPORARY (demo review): after signing out, go to the home page so reviewers land back on the role buttons.
+// TODO: change this back to "/login" once the demo review is over.
+const AFTER_SIGN_OUT = "/";
+
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect(AFTER_SIGN_OUT);
 }
