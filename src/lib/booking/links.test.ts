@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bookingUrl, hashToken, looksLikeToken, newToken } from "./links";
+import { bookingUrl, hashToken, looksLikeToken, newToken, progressUrl } from "./links";
 
 describe("booking link tokens", () => {
   it("are long, URL-safe and unique", () => {
@@ -25,5 +25,6 @@ describe("booking link tokens", () => {
 
   it("build the patient URL", () => {
     expect(bookingUrl("abc", "https://liv2care.example/")).toBe("https://liv2care.example/book/abc");
+    expect(progressUrl("abc", "https://liv2care.example/")).toBe("https://liv2care.example/patient/abc");
   });
 });
