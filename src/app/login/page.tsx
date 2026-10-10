@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { DemoLogins } from "@/components/demo-logins";
+import { LocalDemoLogins } from "@/components/local-demo-logins";
 import { Logo } from "@/components/logo";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { ROLE_HOME, safeNext } from "@/lib/auth/roles";
@@ -15,7 +15,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   const raw = (await searchParams).next;
   const next = safeNext(Array.isArray(raw) ? raw[0] : raw) ?? "";
-  const demo = process.env.DEMO_LOGINS === "on";
+  const demo = process.env.DEMO_LOGINS === "on" && process.env.NODE_ENV !== "production";
   const demoProblem = (await searchParams).demo;
 
   return (
@@ -34,7 +34,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
       {demoProblem && (
         <p role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm font-semibold text-bad">
-          {demoProblem === "unavailable" ? "Demo sign-in is not set up on this site." : "The demo account could not sign in. Please tell the team."}
+          The demo account could not sign in. Please tell the team.
         </p>
       )}
 
@@ -44,9 +44,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             <h2 id="demo-heading" className="font-heading font-extrabold">
               Try a demo account
             </h2>
-            <CardDescription>Fake data. One click signs you in as that role.</CardDescription>
+            <CardDescription>Local development only. Fake data. One click signs you in as that role.</CardDescription>
           </div>
-          <DemoLogins />
+          <LocalDemoLogins />
         </Card>
       )}
     </main>

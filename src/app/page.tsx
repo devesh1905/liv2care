@@ -57,7 +57,7 @@ export default function Home() {
             Try it yourself
           </h2>
           <p className="mt-2 max-w-2xl text-muted-foreground">
-            Everything here uses pretend patients and pretend messages, so nothing is real and nothing is sent. Pick who you want to be and you are signed in with one click.
+            Everything here uses pretend patients and pretend messages, so nothing is real and nothing is sent. Pick who you want to be, and a panel opens on the right where you sign in with that role&apos;s demo password (ask the team for it).
           </p>
           <div className="mt-6">
             <DemoLogins />
