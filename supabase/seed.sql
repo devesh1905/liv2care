@@ -29,8 +29,8 @@ where p.kind in ('lab', 'centre', 'eval', 'specialist');
 -- ---------- one demo login per role ----------
 create temporary table demo_users (id uuid, email text, role public.app_role, name text, partner uuid) on commit drop;
 insert into demo_users values
-  ('00000000-0000-4000-8000-000000000001', 'doctor@demo.liv2care.test', 'doctor', 'Dr. Anita Menon (treating doctor)', null),
-  ('00000000-0000-4000-8000-000000000002', 'clinician@demo.liv2care.test', 'clinician', 'Dr. S. Kapoor (telemedicine)', null),
+  ('00000000-0000-4000-8000-000000000001', 'doctor@demo.liv2care.test', 'doctor', 'Dr. Anita Menon', null),
+  ('00000000-0000-4000-8000-000000000002', 'clinician@demo.liv2care.test', 'clinician', 'Dr. S. Kapoor', null),
   ('00000000-0000-4000-8000-000000000003', 'lab@demo.liv2care.test', 'lab', 'Sunrise Diagnostics desk', '00000000-0000-4000-8000-0000000000a1'),
   ('00000000-0000-4000-8000-000000000004', 'centre@demo.liv2care.test', 'centre', 'Hepatic Imaging Centre desk', '00000000-0000-4000-8000-0000000000b1'),
   ('00000000-0000-4000-8000-000000000005', 'ops@demo.liv2care.test', 'ops', 'Operations desk', null);

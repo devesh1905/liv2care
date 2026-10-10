@@ -1,15 +1,51 @@
 "use client";
 
+import { FileUp, FlaskConical, UserPlus } from "lucide-react";
 import { useActionState, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { CheckRow, Field, FormMessage, Input, Select } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import { enrolPatient, type EnrolState } from "./actions";
 
-const field =
-  "h-11 w-full rounded-lg border bg-background px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring";
-const option = "flex items-start gap-3 rounded-lg border p-3 has-checked:border-primary has-checked:bg-secondary";
+type Route = "order_tests" | "existing_report";
+
+function RouteOption({
+  checked,
+  onSelect,
+  value,
+  icon,
+  title,
+  text,
+}: {
+  checked: boolean;
+  onSelect: () => void;
+  value: Route;
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <label
+      className={cn(
+        "flex cursor-pointer items-start gap-3 rounded-xl border bg-card p-4 transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/30",
+        checked ? "border-primary bg-secondary/60" : "hover:bg-muted/50",
+      )}
+    >
+      <input type="radio" name="route" value={value} checked={checked} onChange={onSelect} className="sr-only" />
+      <span aria-hidden="true" className={cn("grid size-10 shrink-0 place-items-center rounded-lg", checked ? "bg-primary text-primary-foreground" : "bg-secondary text-primary")}>
+        {icon}
+      </span>
+      <span>
+        <span className="block font-heading font-extrabold">{title}</span>
+        <span className="block text-sm text-muted-foreground">{text}</span>
+      </span>
+    </label>
+  );
+}
 
 export function EnrolForm() {
-  const [route, setRoute] = useState<"order_tests" | "existing_report">("order_tests");
+  const [route, setRoute] = useState<Route>("order_tests");
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState<EnrolState, FormData>(async (prev, data) => {
     const result = await enrolPatient(prev, data);
@@ -18,83 +54,82 @@ export function EnrolForm() {
   }, {});
 
   return (
-    <form ref={formRef} action={action} className="flex flex-col gap-5 rounded-lg border p-4 sm:p-6">
-      <div>
-        <h2 className="text-lg font-extrabold">Identify a patient</h2>
-        <p className="text-sm text-muted-foreground">Fake patients only. Enrolment needs the patient&apos;s consent.</p>
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-3">
-        <label className="flex flex-col gap-1.5 text-sm font-semibold sm:col-span-2">
-          Patient name
-          <input name="name" required maxLength={80} className={field} autoComplete="off" />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          Age
-          <input name="age" type="number" required min={18} max={120} inputMode="numeric" className={field} />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          Phone, last 4 digits
-          <input name="phone" inputMode="numeric" pattern="\d{4}" maxLength={4} className={field} autoComplete="off" />
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          Message language
-          <select name="language" className={field} defaultValue="en">
-            <option value="en">English</option>
-            <option value="hi">Hindi</option>
-          </select>
-        </label>
-      </div>
-
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-semibold">How should the patient start?</legend>
-        <label className={option}>
-          <input type="radio" name="route" value="order_tests" checked={route === "order_tests"} onChange={() => setRoute("order_tests")} className="mt-1" />
-          <span>
-            <span className="font-semibold">Option 2: order the tests</span>
-            <span className="block text-sm text-muted-foreground">Approve the preset CBC + ALT + AST. The patient books the lab.</span>
+    <Card aria-labelledby="enrol-title">
+      <form ref={formRef} action={action} className="flex flex-col gap-6">
+        <div className="flex items-start gap-3">
+          <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
+            <UserPlus className="size-5" />
           </span>
-        </label>
-        <label className={option}>
-          <input type="radio" name="route" value="existing_report" checked={route === "existing_report"} onChange={() => setRoute("existing_report")} className="mt-1" />
-          <span>
-            <span className="font-semibold">Option 1: use an existing lab report</span>
-            <span className="block text-sm text-muted-foreground">Upload a report the patient already has. No repeat lab test.</span>
-          </span>
-        </label>
-      </fieldset>
+          <div>
+            <CardTitle id="enrol-title">Identify a patient</CardTitle>
+            <CardDescription>Fake patients only. Enrolment needs the patient&apos;s consent.</CardDescription>
+          </div>
+        </div>
 
-      {route === "order_tests" ? (
-        <label className="flex items-center gap-3 text-sm font-semibold">
-          <input type="checkbox" name="ultrasound" className="size-5" />
-          Also order an ultrasound
-        </label>
-      ) : (
-        <label className="flex flex-col gap-1.5 text-sm font-semibold">
-          Existing lab report (PDF, up to 5 MB)
-          <input name="report" type="file" accept="application/pdf" required className="text-sm font-normal" />
-        </label>
-      )}
+        <div className="grid gap-4 sm:grid-cols-6">
+          <Field label="Patient name" className="sm:col-span-3">
+            <Input name="name" required maxLength={80} autoComplete="off" />
+          </Field>
+          <Field label="Age" className="sm:col-span-1">
+            <Input name="age" type="number" required min={18} max={120} inputMode="numeric" />
+          </Field>
+          <Field label="Phone, last 4 digits" hint="Optional" className="sm:col-span-2">
+            <Input name="phone" inputMode="numeric" pattern="\d{4}" maxLength={4} autoComplete="off" />
+          </Field>
+          <Field label="Message language" className="sm:col-span-3">
+            <Select name="language" defaultValue="en">
+              <option value="en">English</option>
+              <option value="hi">Hindi</option>
+            </Select>
+          </Field>
+        </div>
 
-      <label className="flex items-start gap-3 text-sm font-semibold">
-        <input type="checkbox" name="consent" required className="mt-0.5 size-5" />
-        The patient has given consent to this pathway and to sharing their reports with the platform clinician.
-      </label>
+        <fieldset className="flex flex-col gap-3">
+          <legend className="mb-1 text-sm font-semibold">How should the patient start?</legend>
+          <div className="grid gap-3 md:grid-cols-2">
+            <RouteOption
+              value="order_tests"
+              checked={route === "order_tests"}
+              onSelect={() => setRoute("order_tests")}
+              icon={<FlaskConical className="size-5" />}
+              title="Option 2: order the tests"
+              text="Approve the preset CBC + ALT + AST. The patient books the lab."
+            />
+            <RouteOption
+              value="existing_report"
+              checked={route === "existing_report"}
+              onSelect={() => setRoute("existing_report")}
+              icon={<FileUp className="size-5" />}
+              title="Option 1: use an existing report"
+              text="Upload a lab report the patient already has. No repeat lab test."
+            />
+          </div>
+        </fieldset>
 
-      {state.error && (
-        <p role="alert" className="text-sm font-semibold text-destructive">
-          {state.error}
-        </p>
-      )}
-      {state.success && (
-        <p role="status" className="text-sm font-semibold text-green-700 dark:text-green-400">
-          {state.success}
-        </p>
-      )}
+        {route === "order_tests" ? (
+          <CheckRow name="ultrasound">Also order an ultrasound</CheckRow>
+        ) : (
+          <Field label="Existing lab report" hint="PDF, up to 5 MB">
+            <input
+              name="report"
+              type="file"
+              accept="application/pdf"
+              required
+              className="text-sm file:mr-3 file:h-10 file:rounded-lg file:border file:bg-card file:px-4 file:font-heading file:font-semibold"
+            />
+          </Field>
+        )}
 
-      <Button type="submit" size="lg" disabled={pending} className="self-start">
-        {pending ? "Enrolling…" : "Enrol patient"}
-      </Button>
-    </form>
+        <CheckRow name="consent" required className="rounded-xl bg-secondary/60 p-4 font-semibold">
+          The patient has given consent to this pathway and to sharing their reports with the platform clinician.
+        </CheckRow>
+
+        <FormMessage error={state.error} success={state.success} />
+
+        <Button type="submit" size="lg" disabled={pending} className="self-start">
+          {pending ? "Enrolling…" : "Enrol patient"}
+        </Button>
+      </form>
+    </Card>
   );
 }
