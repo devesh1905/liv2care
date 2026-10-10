@@ -4,7 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
 import { transitionJourney } from "@/lib/journey/server";
-import { mockProvider } from "@/lib/messages/provider";
+import { sendBookingLink } from "@/lib/booking/notify";
 import { templates } from "@/lib/messages/templates";
 import { checkPdf } from "@/lib/reports/pdf";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -76,13 +76,7 @@ async function simpleEvent(form: FormData, type: "MARK_MISSED" | "MARK_ATTENDED"
   if (!result.ok) return { error: result.error.message };
 
   if (type === "MARK_MISSED") {
-    const { data: patient } = await supabase
-      .from("journeys")
-      .select("patients(code)")
-      .eq("id", journeyId)
-      .maybeSingle();
-    const code = (patient?.patients as { code?: string } | null)?.code ?? "";
-    await mockProvider(createAdminClient()).send({ journeyId, channel: "SMS", body: templates.missed(code) });
+    await sendBookingLink(createAdminClient(), journeyId, templates.missed, "SMS");
   }
   return { success: type === "MARK_MISSED" ? "Marked missed. A reschedule message was sent (simulated)." : "Visit marked attended." };
 }

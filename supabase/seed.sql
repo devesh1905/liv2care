@@ -18,13 +18,13 @@ insert into public.partners (id, kind, name, area, distance_km) values
   ('00000000-0000-4000-8000-0000000000d2', 'specialist', 'Gastro and Liver Clinic', 'Dadar', 7),
   ('00000000-0000-4000-8000-0000000000e1', 'routine', 'Your diabetes clinic', 'Andheri', 1);
 
--- Open slots for the next three days at every lab and centre (9:00, 11:30, 16:00).
+-- Open slots for the next three days at every lab, centre, evaluation site and specialist (9:00, 11:30, 16:00 India time).
 insert into public.slots (partner_id, starts_at)
-select p.id, (date_trunc('day', now()) + (d || ' days')::interval + t)
+select p.id, ((date_trunc('day', now() at time zone 'Asia/Kolkata') + (d || ' days')::interval + t) at time zone 'Asia/Kolkata')
 from public.partners p
 cross join generate_series(1, 3) d
 cross join (values (interval '9 hours'), (interval '11 hours 30 minutes'), (interval '16 hours')) as times(t)
-where p.kind in ('lab', 'centre');
+where p.kind in ('lab', 'centre', 'eval', 'specialist');
 
 -- ---------- one demo login per role ----------
 create temporary table demo_users (id uuid, email text, role public.app_role, name text, partner uuid) on commit drop;

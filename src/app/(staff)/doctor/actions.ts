@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
 import { startJourney } from "@/lib/journey/start";
+import { sendBookingLink } from "@/lib/booking/notify";
 import { mockProvider } from "@/lib/messages/provider";
 import { templates } from "@/lib/messages/templates";
 import { checkPdf } from "@/lib/reports/pdf";
@@ -74,11 +75,11 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
   const { data: row } = await supabase.from("journey_status").select("patient_code").eq("journey_id", journeyId).maybeSingle();
   const code = row?.patient_code ?? "";
   try {
-    await mockProvider(admin).send({
-      journeyId,
-      channel: "WhatsApp",
-      body: route === "existing_report" ? templates.existingReportUsed() : templates.testsOrdered(code, ultrasound),
-    });
+    if (route === "existing_report") {
+      await mockProvider(admin).send({ journeyId, channel: "WhatsApp", body: templates.existingReportUsed() });
+    } else {
+      await sendBookingLink(admin, journeyId, (url) => templates.testsOrdered(url, ultrasound));
+    }
   } catch {
     // The journey exists; the message log can be filled in later.
   }
