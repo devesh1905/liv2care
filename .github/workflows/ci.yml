@@ -29,5 +29,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npx supabase start -x studio,imgproxy,vector,logflare,edge-runtime,realtime,storage-api,mailpit
+      - run: npx supabase start -x studio,imgproxy,vector,logflare,edge-runtime,realtime,mailpit
       - run: npm run test:db
+      - name: Export local Supabase settings for the integration tests
+        run: |
+          npx supabase status -o json > /tmp/sb.json
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL /tmp/sb.json)" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r .SERVICE_ROLE_KEY /tmp/sb.json)" >> "$GITHUB_ENV"
+      - run: npm run test:int

@@ -12,7 +12,8 @@
     "test:watch": "vitest",
     "test:db": "supabase test db",
     "db:reset": "supabase db reset",
-    "db:start": "supabase start"
+    "db:start": "supabase start",
+    "test:int": "vitest run --config vitest.int.config.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

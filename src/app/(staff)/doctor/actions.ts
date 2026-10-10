@@ -17,6 +17,8 @@ const CONSENT_SCOPE = "Liver-risk assessment pathway and sharing reports with th
 /** Option 1 (existing lab report) or Option 2 (order the preset tests). Needs the patient's consent. */
 export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<EnrolState> {
   const doctor = await requireRole("doctor");
+  // Revalidate up front: Next 16.4 fails to re-render the layout after an action that returns without revalidating.
+  revalidatePath("/doctor");
 
   const name = String(form.get("name") ?? "").trim();
   const age = Number(form.get("age"));
@@ -81,7 +83,6 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
     // The journey exists; the message log can be filled in later.
   }
 
-  revalidatePath("/doctor");
   return {
     success:
       route === "existing_report"
