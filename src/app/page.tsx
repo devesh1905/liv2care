@@ -18,6 +18,7 @@ const safeguards = [
 ];
 
 export default function Home() {
+  const demo = process.env.DEMO_LOGINS === "on";
   return (
     <div className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
@@ -57,7 +58,9 @@ export default function Home() {
             Try it yourself
           </h2>
           <p className="mt-2 max-w-2xl text-muted-foreground">
-            Everything here uses pretend patients and pretend messages, so nothing is real and nothing is sent. Pick who you want to be, and a panel opens on the right where you sign in with that role&apos;s demo password (ask the team for it).
+            {demo
+              ? "Everything here uses pretend patients and pretend messages, so nothing is real and nothing is sent. Pick who you want to be, and a panel opens on the right where you sign in with that role’s demo password (ask the team for it)."
+              : "Everything here uses pretend patients and pretend messages. The demo role buttons are switched off on this site for now, so staff sign in with their own account."}
           </p>
           <div className="mt-6">
             <DemoLogins />

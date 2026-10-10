@@ -2,7 +2,8 @@
 // Run after `npx supabase db reset`:  npm run seed:files   (needs .env.local with the local Supabase keys)
 import { createClient } from "@supabase/supabase-js";
 
-process.loadEnvFile(".env.local");
+// ENV_FILE lets you point this at a hosted project (a git-ignored .env.hosted holding its URL and service-role key).
+process.loadEnvFile(process.env.ENV_FILE ?? ".env.local");
 const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
 /** A one-page PDF saying the file is fake. Built by hand so no PDF library is needed. */
