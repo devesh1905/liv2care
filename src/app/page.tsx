@@ -1,4 +1,5 @@
 import { ArrowRight, CalendarCheck, ClipboardList, FileCheck2, ShieldCheck, Stethoscope } from "lucide-react";
+import { DemoLogins } from "@/components/demo-logins";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 
@@ -48,6 +49,42 @@ export default function Home() {
                 See the prototype
               </Button>
             </div>
+          </div>
+        </section>
+
+        <section aria-labelledby="try" className="mx-auto w-full max-w-6xl px-4 pt-14 sm:px-6">
+          <h2 id="try" className="font-heading text-2xl font-extrabold sm:text-3xl">
+            Try it yourself
+          </h2>
+          <p className="mt-2 max-w-2xl text-muted-foreground">
+            Everything here uses pretend patients and pretend messages, so nothing is real and nothing is sent. Pick who you want to be and you are signed in with one click.
+          </p>
+          <div className="mt-6">
+            <DemoLogins />
+          </div>
+
+          <div className="mt-6 rounded-2xl border bg-secondary/60 p-5 sm:p-6">
+            <h3 className="font-heading text-lg font-extrabold">What you can try today</h3>
+            <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-sm sm:text-base">
+              <li>
+                <strong>The doctor</strong> can add a pretend patient, either by uploading a lab report the patient already has or by ordering the tests. Once the clinician has replied, the doctor can approve or decline a FibroScan and choose what happens next.
+              </li>
+              <li>
+                <strong>The clinician</strong> can open the uploaded report, type the FIB-4 value and a short summary, and send them back to the doctor. The app never works out any result itself.
+              </li>
+              <li>
+                <strong>Labs and scan centres</strong> can add appointment times, upload reports, and mark visits as attended or missed.
+              </li>
+              <li>
+                <strong>Operations</strong> can see every patient, where they are in the journey, and the overall progress numbers.
+              </li>
+              <li>
+                <strong>The patient</strong> has no login. After the doctor orders tests for a pretend patient, a link appears to open the patient&apos;s own page, where they pick a lab and a time (in English or Hindi).
+              </li>
+            </ul>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Tip: start as the doctor and add a patient, then sign out and come back as the other roles to follow that patient along. Reminders and a full activity log for operations are coming next.
+            </p>
           </div>
         </section>
 
