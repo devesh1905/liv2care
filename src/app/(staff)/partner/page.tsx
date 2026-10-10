@@ -1,4 +1,4 @@
-import { Building2, CalendarClock, FlaskConical } from "lucide-react";
+import { Building2, CalendarClock, CircleCheck, FlaskConical } from "lucide-react";
 import { Suspense } from "react";
 import { JourneyProgress } from "@/components/journey-progress";
 import { PageHeader } from "@/components/page-header";
@@ -16,6 +16,13 @@ export const metadata = { title: "Lab and centre" };
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
 
+const NOTICES: Record<string, string> = {
+  "lab-uploaded": "Report uploaded. It is now in the clinician's queue.",
+  "centre-uploaded": "FibroScan report uploaded. It is now with the treating doctor.",
+  missed: "Marked missed. A reschedule message was sent to the patient (simulated).",
+  attended: "Visit marked attended.",
+};
+
 type Visit = {
   id: string;
   journey_id: string;
@@ -23,8 +30,10 @@ type Visit = {
   journeys: { stage: number; missed: boolean; patients: { code: string; name: string } | null } | null;
 };
 
-async function Content() {
+async function Content({ searchParams }: { searchParams: PageProps<"/partner">["searchParams"] }) {
   const user = await requireRole("lab", "centre");
+  const raw = (await searchParams).notice;
+  const notice = NOTICES[Array.isArray(raw) ? raw[0] : (raw ?? "")];
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
@@ -43,6 +52,12 @@ async function Content() {
 
   return (
     <>
+      {notice && (
+        <p role="status" className="flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 font-semibold text-ok">
+          <CircleCheck className="size-5 shrink-0" aria-hidden="true" />
+          {notice}
+        </p>
+      )}
       <p className="flex items-center gap-2 text-muted-foreground">
         <Building2 className="size-4" aria-hidden="true" />
         {partner?.name} · {partner?.area}
@@ -135,7 +150,7 @@ async function Content() {
   );
 }
 
-export default function Page() {
+export default function Page(props: PageProps<"/partner">) {
   return (
     <>
       <PageHeader
@@ -144,7 +159,7 @@ export default function Page() {
         icon={<FlaskConical className="size-5" />}
       />
       <Suspense fallback={<div role="status" aria-label="Loading" className="h-32 animate-pulse rounded-xl bg-muted" />}>
-        <Content />
+        <Content searchParams={props.searchParams} />
       </Suspense>
     </>
   );

@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/session";
 import { transitionJourney } from "@/lib/journey/server";
 import { sendBookingLink } from "@/lib/booking/notify";
@@ -53,12 +54,8 @@ export async function uploadReport(_prev: PartnerState, form: FormData): Promise
     await createAdminClient().storage.from("reports").remove([storagePath]);
     return { error: result.error.message };
   }
-  return {
-    success:
-      user.role === "lab"
-        ? "Report uploaded. It is now in the clinician's queue."
-        : "FibroScan report uploaded. It is now with the treating doctor.",
-  };
+  // The visit leaves this list once uploaded, so confirm on the page itself, not on the card.
+  redirect(`/partner?notice=${user.role === "lab" ? "lab-uploaded" : "centre-uploaded"}`);
 }
 
 async function simpleEvent(form: FormData, type: "MARK_MISSED" | "MARK_ATTENDED"): Promise<PartnerState> {
@@ -78,7 +75,7 @@ async function simpleEvent(form: FormData, type: "MARK_MISSED" | "MARK_ATTENDED"
   if (type === "MARK_MISSED") {
     await sendBookingLink(createAdminClient(), journeyId, templates.missed, "SMS");
   }
-  return { success: type === "MARK_MISSED" ? "Marked missed. A reschedule message was sent (simulated)." : "Visit marked attended." };
+  redirect(`/partner?notice=${type === "MARK_MISSED" ? "missed" : "attended"}`);
 }
 
 export async function markMissed(_prev: PartnerState, form: FormData) {
