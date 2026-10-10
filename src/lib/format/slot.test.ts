@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatSlot } from "./format";
+import { formatSlot } from "@/lib/format/slot";
 
 describe("formatSlot", () => {
   it("shows India time", () => {

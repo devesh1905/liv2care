@@ -2,7 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { formatSlot } from "@/lib/booking/format";
+import { formatSlot } from "@/lib/format/slot";
 import { t, type Lang } from "@/lib/i18n/patient";
 import type { Preference, SlotOption } from "@/lib/logistics/types";
 import { bookSlot, suggestSlot, type BookState } from "./actions";

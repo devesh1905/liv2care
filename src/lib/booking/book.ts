@@ -8,7 +8,7 @@ import type { JourneyEvent, JourneyState, NextStepType } from "@/lib/journey/typ
 import type { Lang } from "@/lib/i18n/patient";
 import { mockProvider } from "@/lib/messages/provider";
 import { templates } from "@/lib/messages/templates";
-import { formatSlot } from "./format";
+import { formatSlot } from "@/lib/format/slot";
 import { resolveBookingLink } from "./links";
 
 const PATIENT = { id: "booking-link", role: "patient" } as const;
