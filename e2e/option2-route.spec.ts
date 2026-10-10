@@ -1,24 +1,10 @@
-import { createClient } from "@supabase/supabase-js";
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { admin, signInAs } from "./helpers";
 
 /**
  * Option 2 end to end: the doctor orders tests, the patient books with the helper, the lab marks the visit missed,
  * the patient reschedules from the new link, and the lab uploads the report. Fake data only.
  */
-try {
-  process.loadEnvFile(".env.local");
-} catch {
-  // variables may come from the environment
-}
-const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } });
-
-async function signInAs(browser: Browser, role: string): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
-  await page.goto("/login");
-  await page.locator(`input[name=role][value=${role}]`).locator("xpath=..").getByRole("button").click();
-  await page.waitForURL((u) => !u.pathname.startsWith("/login"));
-  return page;
-}
 
 /** The booking link in the newest message that starts with `prefix`, once that message exists. */
 async function linkFromMessage(journeyId: string, prefix: string): Promise<string> {
@@ -62,7 +48,8 @@ test("Option 2: order, book, miss, reschedule, upload", async ({ browser }) => {
   await patientPage.goto(await linkFromMessage(journey!.id, "Your doctor has requested"));
   await expect(patientPage.getByRole("heading", { name: "Book your blood test" })).toBeVisible();
   await patientPage.getByRole("button", { name: "Nearest" }).click();
-  await expect(patientPage.getByRole("status").filter({ hasText: "Nearest" })).toBeVisible();
+  // the reason is a model-written sentence (or the plain fallback), so only require that one is shown
+  await expect(patientPage.getByRole("status")).toContainText(/\w/);
   await patientPage.getByRole("button", { name: "Confirm booking" }).click();
   await expect(patientPage.getByRole("heading", { name: "Booking confirmed" })).toBeVisible();
   await expect(patientPage.getByText(/See you at Sunrise Diagnostics/)).toBeVisible();
@@ -82,7 +69,8 @@ test("Option 2: order, book, miss, reschedule, upload", async ({ browser }) => {
   await patientPage.goto(await linkFromMessage(journey!.id, "You missed your appointment"));
   await expect(patientPage.getByText("You missed this appointment")).toBeVisible();
   await patientPage.getByRole("button", { name: "Nearest" }).click();
-  await expect(patientPage.getByRole("status").filter({ hasText: "Nearest" })).toBeVisible();
+  // the reason is a model-written sentence (or the plain fallback), so only require that one is shown
+  await expect(patientPage.getByRole("status")).toContainText(/\w/);
   await patientPage.getByRole("button", { name: "Confirm booking" }).click();
   await expect(patientPage.getByRole("heading", { name: "Booking confirmed" })).toBeVisible();
 

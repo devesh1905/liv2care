@@ -10,6 +10,8 @@ export default defineConfig({
   timeout: 90_000,
   expect: { timeout: 15_000 },
   use: {
+    actionTimeout: 30_000,
+    navigationTimeout: 60_000,
     baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
     channel: process.env.PW_CHANNEL ?? "msedge",
     trace: "retain-on-failure",

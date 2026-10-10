@@ -69,7 +69,9 @@ describe("transition()", () => {
 
   it("asks the database for the next pending action", async () => {
     const m = memoryStore({ stage: STAGE.REPORT_IN, missed: false });
-    await transition(m.store, "j1", { type: "CLINICIAN_SUBMIT", summaryWritten: true }, { id: "c1", role: "clinician" });
+    await transition(m.store, "j1", { type: "CLINICIAN_SUBMIT", summaryWritten: true }, { id: "c1", role: "clinician" }, {}, {
+      review: { fib4Text: "typed", summary: "typed", recommendsVcte: false },
+    });
     expect(m.applied[0].nextTask).toEqual({ owner: "Doctor", description: "Decide on FibroScan", hours: 24 });
 
     const done = memoryStore({ stage: STAGE.NEXT_BOOKED, missed: false });
@@ -91,6 +93,25 @@ describe("transition()", () => {
     expect(up.applied).toHaveLength(0);
   });
 
+  it("a clinician submission needs a typed review, and nothing else may carry one", async () => {
+    const m = memoryStore({ stage: STAGE.REPORT_IN, missed: false });
+    const clinician = { id: "c1", role: "clinician" } as const;
+    const event = { type: "CLINICIAN_SUBMIT", summaryWritten: true } as const;
+    expect(await transition(m.store, "j1", event, clinician)).toMatchObject({ ok: false, error: { code: "invalid_payload" } });
+    expect(await transition(m.store, "j1", event, clinician, {}, { review: { fib4Text: " ", summary: "x", recommendsVcte: false } })).toMatchObject({ ok: false });
+    expect(await transition(m.store, "j1", event, clinician, {}, { review: { fib4Text: "2.5", summary: "", recommendsVcte: false } })).toMatchObject({ ok: false });
+    expect(m.applied).toHaveLength(0);
+
+    const review = { fib4Text: "2.5", summary: "Typed by the clinician", recommendsVcte: true };
+    expect(await transition(m.store, "j1", event, clinician, { recommends_vcte: true }, { review })).toMatchObject({ ok: true });
+    expect(m.applied[0].effects.review).toEqual(review);
+    // the audit detail carries the flag only, never the text
+    expect(JSON.stringify(m.applied[0].detail)).not.toContain("Typed by");
+
+    const other = memoryStore({ stage: STAGE.REVIEWED, missed: false });
+    expect(await transition(other.store, "j1", { type: "APPROVE_VCTE" }, doctor, {}, { review })).toMatchObject({ ok: false });
+  });
+
   it("passes the booking and report through to the store", async () => {
     const m = memoryStore({ stage: STAGE.ORDERED, missed: false });
     const booking = { partnerId: "a1", slotId: "s1", kind: "lab", slotLabel: "Tomorrow 9:00 am" } as const;
@@ -104,10 +125,11 @@ describe("transition()", () => {
     const booking = { booking: { partnerId: "a1", slotId: null, kind: "lab", slotLabel: "x" } } as const;
     const labReport = { report: { kind: "lab", partnerId: "a1", storagePath: "a", fileName: "a.pdf" } } as const;
     const fibroReport = { report: { kind: "fibroscan", partnerId: "b1", storagePath: "b", fileName: "b.pdf" } } as const;
+    const review = { review: { fib4Text: "typed", summary: "typed", recommendsVcte: false } } as const;
     const steps = [
       [{ type: "BOOK" }, patient, booking],
       [{ type: "LAB_UPLOAD" }, lab, labReport],
-      [{ type: "CLINICIAN_SUBMIT", summaryWritten: true }, { id: "c1", role: "clinician" }],
+      [{ type: "CLINICIAN_SUBMIT", summaryWritten: true }, { id: "c1", role: "clinician" }, review],
       [{ type: "APPROVE_VCTE" }, doctor],
       [{ type: "BOOK" }, patient, booking],
       [{ type: "CENTRE_UPLOAD" }, { id: "c2", role: "centre" }, fibroReport],

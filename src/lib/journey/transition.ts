@@ -23,7 +23,10 @@ export type ReportEffect = {
   labValues?: Record<string, number>;
 };
 
-export type Effects = { booking?: BookingEffect; report?: ReportEffect };
+/** The clinician's review. FIB-4 and the summary are typed by hand; they go to `reviews` only, never to the audit detail. */
+export type ReviewEffect = { fib4Text: string; summary: string; recommendsVcte: boolean };
+
+export type Effects = { booking?: BookingEffect; report?: ReportEffect; review?: ReviewEffect };
 
 /** Hours until the next pending action is overdue. */
 const TASK_HOURS = 24;
@@ -76,6 +79,11 @@ function checkEffects(event: JourneyEvent, effects: Effects): string | null {
   const kind = REPORT_KIND_FOR[event.type];
   if (kind && effects.report?.kind !== kind) return "A report of the right kind is required";
   if (!kind && effects.report) return "This event does not take a report";
+  if (event.type === "CLINICIAN_SUBMIT") {
+    if (!effects.review || !effects.review.fib4Text.trim() || !effects.review.summary.trim()) return "The FIB-4 text and the summary are required";
+  } else if (effects.review) {
+    return "This event does not take a review";
+  }
   return null;
 }
 
@@ -167,6 +175,9 @@ export function supabaseJourneyStore(admin: SupabaseClient): JourneyStore {
             }
           : null,
         p_next_task: req.nextTask,
+        p_review: req.effects.review
+          ? { fib4_text: req.effects.review.fib4Text, summary: req.effects.review.summary, recommends_vcte: req.effects.review.recommendsVcte }
+          : null,
       });
       if (error) {
         if (error.code === "40001") throw new StaleJourneyError();

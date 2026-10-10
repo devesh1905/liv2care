@@ -41,6 +41,12 @@ describe("localSuggest", () => {
     expect(localSuggest([near_late], "morning")?.reason).toMatch(/earliest time/i);
   });
 
+  it("gives the reason in Hindi when asked", () => {
+    expect(localSuggest(all, "nearest", "hi")?.reason).toBe("सबसे नज़दीक, 2 किमी दूर");
+    expect(localSuggest(all, "earliest", "hi")?.reason).toMatch(/[ऀ-ॿ]/);
+    expect(localSuggest([near_late], "morning", "hi")?.reason).toMatch(/[ऀ-ॿ]/);
+  });
+
   it("returns null when nothing is open", () => {
     expect(localSuggest([], "nearest")).toBeNull();
   });

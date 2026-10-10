@@ -32,6 +32,10 @@ export function Select({ className, ...props }: React.ComponentProps<"select">) 
   return <select className={cn(control, "appearance-auto", className)} {...props} />;
 }
 
+export function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
+  return <textarea className={cn(control, "h-auto min-h-32 py-2.5 leading-relaxed", className)} {...props} />;
+}
+
 /** A large checkbox row with text, for consent and options. */
 export function CheckRow({ children, className, ...props }: React.ComponentProps<"input"> & { children: React.ReactNode }) {
   return (
