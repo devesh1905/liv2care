@@ -21,23 +21,28 @@ function memoryStore(initial: JourneyState | null, opts: { stale?: boolean } = {
 }
 
 const doctor = { id: "d1", role: "doctor" } as const;
+const approve = { decision: { kind: "vcte_approve" } } as const;
+const routine = {
+  decision: { kind: "next_step", nextStep: "routine", followUpMonths: 12 },
+  booking: { partnerId: "e1", slotId: null, kind: "routine", slotLabel: "In 12 months" },
+} as const;
 const lab = { id: "l1", role: "lab" } as const;
 
 describe("transition()", () => {
   it("applies an allowed move and returns the new state", async () => {
     const m = memoryStore({ stage: STAGE.REVIEWED, missed: false });
-    const r = await transition(m.store, "j1", { type: "APPROVE_VCTE" }, doctor);
+    const r = await transition(m.store, "j1", { type: "APPROVE_VCTE" }, doctor, {}, approve);
     expect(r).toEqual({ ok: true, stage: STAGE.VCTE_LINK, missed: false, eventId: 1 });
     expect(m.applied[0]).toMatchObject({ event: "APPROVE_VCTE", expected: { stage: STAGE.REVIEWED }, next: { stage: STAGE.VCTE_LINK } });
   });
 
   it("records the next step and decline reason for the database", async () => {
     const a = memoryStore({ stage: STAGE.VCTE_REPORT, missed: false });
-    await transition(a.store, "j1", { type: "CHOOSE_NEXT_STEP", step: "specialist" }, doctor);
+    await transition(a.store, "j1", { type: "CHOOSE_NEXT_STEP", step: "specialist" }, doctor, {}, { decision: { kind: "next_step", nextStep: "specialist" } });
     expect(a.applied[0]).toMatchObject({ nextStep: "specialist", declineReason: null });
 
     const b = memoryStore({ stage: STAGE.REVIEWED, missed: false });
-    await transition(b.store, "j1", { type: "DECLINE_VCTE", reason: "Cost or access" }, doctor);
+    await transition(b.store, "j1", { type: "DECLINE_VCTE", reason: "Cost or access" }, doctor, {}, { decision: { kind: "vcte_decline", reason: "Cost or access" } });
     expect(b.applied[0]).toMatchObject({ nextStep: null, declineReason: "Cost or access" });
   });
 
@@ -51,12 +56,12 @@ describe("transition()", () => {
 
   it("reports a missing journey", async () => {
     const m = memoryStore(null);
-    expect(await transition(m.store, "nope", { type: "APPROVE_VCTE" }, doctor)).toMatchObject({ ok: false, error: { code: "not_found" } });
+    expect(await transition(m.store, "nope", { type: "APPROVE_VCTE" }, doctor, {}, approve)).toMatchObject({ ok: false, error: { code: "not_found" } });
   });
 
   it("reports a stale journey instead of throwing", async () => {
     const m = memoryStore({ stage: STAGE.REVIEWED, missed: false }, { stale: true });
-    expect(await transition(m.store, "j1", { type: "APPROVE_VCTE" }, doctor)).toMatchObject({ ok: false, error: { code: "stale" } });
+    expect(await transition(m.store, "j1", { type: "APPROVE_VCTE" }, doctor, {}, approve)).toMatchObject({ ok: false, error: { code: "stale" } });
   });
 
   it("keeps clinical values out of the audit detail", async () => {
@@ -112,6 +117,28 @@ describe("transition()", () => {
     expect(await transition(other.store, "j1", { type: "APPROVE_VCTE" }, doctor, {}, { review })).toMatchObject({ ok: false });
   });
 
+  it("a doctor decision must match the event and carry the right fields", async () => {
+    const reviewed = () => memoryStore({ stage: STAGE.REVIEWED, missed: false });
+    let m = reviewed();
+    expect(await transition(m.store, "j1", { type: "APPROVE_VCTE" }, doctor)).toMatchObject({ ok: false, error: { code: "invalid_payload" } });
+    expect(await transition(m.store, "j1", { type: "APPROVE_VCTE" }, doctor, {}, { decision: { kind: "vcte_decline", reason: "x" } })).toMatchObject({ ok: false });
+    // a decline must carry the same preset reason as the event
+    expect(
+      await transition(m.store, "j1", { type: "DECLINE_VCTE", reason: "Cost or access" }, doctor, {}, { decision: { kind: "vcte_decline", reason: "Patient declined" } }),
+    ).toMatchObject({ ok: false });
+    expect(await transition(m.store, "j1", { type: "REQUEST_REREVIEW" }, doctor, {}, { decision: { kind: "rereview" } })).toMatchObject({ ok: true });
+    expect(m.applied).toHaveLength(1);
+
+    // next steps: routine needs months and a booking; the others need the chosen step and no booking
+    m = memoryStore({ stage: STAGE.VCTE_REPORT, missed: false });
+    const step = { type: "CHOOSE_NEXT_STEP", step: "routine" } as const;
+    expect(await transition(m.store, "j1", step, doctor, {}, { decision: { kind: "next_step", nextStep: "routine" }, booking: routine.booking })).toMatchObject({ ok: false });
+    expect(await transition(m.store, "j1", step, doctor, {}, { decision: { kind: "next_step", nextStep: "routine", followUpMonths: 99 }, booking: routine.booking })).toMatchObject({ ok: false });
+    expect(await transition(m.store, "j1", step, doctor, {}, { decision: routine.decision })).toMatchObject({ ok: false });
+    expect(await transition(m.store, "j1", { type: "CHOOSE_NEXT_STEP", step: "eval" }, doctor, {}, routine)).toMatchObject({ ok: false });
+    expect(await transition(m.store, "j1", step, doctor, {}, routine)).toMatchObject({ ok: true, stage: STAGE.NEXT_BOOKED });
+  });
+
   it("passes the booking and report through to the store", async () => {
     const m = memoryStore({ stage: STAGE.ORDERED, missed: false });
     const booking = { partnerId: "a1", slotId: "s1", kind: "lab", slotLabel: "Tomorrow 9:00 am" } as const;
@@ -130,10 +157,10 @@ describe("transition()", () => {
       [{ type: "BOOK" }, patient, booking],
       [{ type: "LAB_UPLOAD" }, lab, labReport],
       [{ type: "CLINICIAN_SUBMIT", summaryWritten: true }, { id: "c1", role: "clinician" }, review],
-      [{ type: "APPROVE_VCTE" }, doctor],
+      [{ type: "APPROVE_VCTE" }, doctor, approve],
       [{ type: "BOOK" }, patient, booking],
       [{ type: "CENTRE_UPLOAD" }, { id: "c2", role: "centre" }, fibroReport],
-      [{ type: "CHOOSE_NEXT_STEP", step: "routine" }, doctor],
+      [{ type: "CHOOSE_NEXT_STEP", step: "routine" }, doctor, routine],
       [{ type: "MARK_ATTENDED" }, lab],
     ] as const;
     for (const [event, actor, effects] of steps as unknown as [JourneyEvent, Actor, Effects?][]) {

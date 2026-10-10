@@ -34,7 +34,7 @@ const RULES: { [K in JourneyEvent["type"]]: Rule } = {
     from: [STAGE.ORDERED, STAGE.VCTE_LINK, STAGE.NEXT_LINK],
     to: (s) => (s.stage + 1) as Stage,
   },
-  MARK_MISSED: { roles: ["ops", "lab", "centre"], from: BOOKED, to: (s) => s.stage },
+  MARK_MISSED: { roles: ["ops", "lab", "centre", "doctor"], from: BOOKED, to: (s) => s.stage },
   RESCHEDULE: { roles: ["patient", "ops"], from: BOOKED, to: (s) => s.stage },
   LAB_UPLOAD: { roles: ["lab"], from: [STAGE.LAB_BOOKED], to: STAGE.REPORT_IN },
   CLINICIAN_SUBMIT: {
@@ -65,7 +65,8 @@ const RULES: { [K in JourneyEvent["type"]]: Rule } = {
         ? "Unknown next step"
         : null,
   },
-  MARK_ATTENDED: { roles: ["lab", "centre"], from: [STAGE.NEXT_BOOKED], to: STAGE.COMPLETE },
+  // Follow-up visits are at the doctor's own clinic or at sites with no login, so the doctor and ops can confirm them too.
+  MARK_ATTENDED: { roles: ["lab", "centre", "doctor", "ops"], from: [STAGE.NEXT_BOOKED], to: STAGE.COMPLETE },
   SEND_REMINDER: { roles: ["ops"], from: OPEN, to: (s) => s.stage },
 };
 

@@ -62,8 +62,8 @@ describe("disallowed transitions", () => {
           const listed = ALLOWED.some((c) => c.event.type === event.type && c.role === role && c.from === from);
           // ops may book for the patient (family-assisted booking)
           const opsBooks = event.type === "BOOK" && role === "ops" && bookable.includes(from);
-          // a centre can mark a follow-up visit attended as well as a lab
-          const centreAttends = event.type === "MARK_ATTENDED" && role === "centre" && from === STAGE.NEXT_BOOKED;
+          // a centre, the doctor's clinic and operations can mark a follow-up visit attended as well as a lab
+          const centreAttends = event.type === "MARK_ATTENDED" && ["centre", "doctor", "ops"].includes(role) && from === STAGE.NEXT_BOOKED;
           const d = decide(at(from), event, actor(role));
           expect(d.ok, `${event.type} ${role} @${from}`).toBe(listed || opsBooks || centreAttends);
         }

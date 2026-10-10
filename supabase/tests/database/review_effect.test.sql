@@ -37,7 +37,7 @@ select is(
 select throws_ok(
   $$select public.apply_journey_event(current_setting('t.j')::uuid, 'APPROVE_VCTE', 3::smallint, false, 4::smallint, false,
       '00000000-0000-4000-8000-000000000001', 'doctor', '{}'::jsonb, null, null, null, null, null,
-      '{"fib4_text":"1","summary":"x"}'::jsonb)$$,
+      '{"fib4_text":"1","summary":"x"}'::jsonb, '{"kind":"vcte_approve"}'::jsonb)$$,
   '23514', null, 'no other event may carry a review');
 
 select * from finish();

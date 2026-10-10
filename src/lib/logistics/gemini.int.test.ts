@@ -22,11 +22,16 @@ const input = (language: "en" | "hi", preference: SuggestInput["preference"]): S
 
 describe.skipIf(!process.env.GEMINI_API_KEY)("Gemini booking helper (live)", () => {
   it("keeps the code's pick and returns a grounded sentence from the model", async () => {
-    const s = await suggest(input("en", "nearest"), { timeoutMs: 20_000 });
-    expect(s).toMatchObject({ partnerId: "p-near", slotId: "s1" }); // always the code's choice
-    expect(s!.reason.length).toBeGreaterThan(3);
-    // "local" here means the key, the model name (GEMINI_MODEL), the network or our checks rejected the reply
-    expect(s!.source).toBe("gemini");
+    // A live free-tier model can be busy or slip once, so allow three tries; a working key and model succeed at least once.
+    let last;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      last = await suggest(input("en", "nearest"), { timeoutMs: 20_000 });
+      expect(last).toMatchObject({ partnerId: "p-near", slotId: "s1" }); // always the code's choice, whatever the model does
+      if (last!.source === "gemini") break;
+    }
+    expect(last!.reason.length).toBeGreaterThan(3);
+    // "local" after three tries means the key, the model name (GEMINI_MODEL) or the network is the problem
+    expect(last!.source).toBe("gemini");
   });
 
   it("always returns the right pick, and a Devanagari reason in Hindi, even when the model slips", async () => {

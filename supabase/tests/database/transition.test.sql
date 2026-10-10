@@ -12,7 +12,7 @@ select is(
 
 select lives_ok(
   $$select public.apply_journey_event(current_setting('t.j1')::uuid, 'APPROVE_VCTE', 3::smallint, false, 4::smallint, false,
-      '00000000-0000-4000-8000-000000000001', 'doctor')$$,
+      '00000000-0000-4000-8000-000000000001', 'doctor', '{}'::jsonb, null, null, null, null, null, null, '{"kind":"vcte_approve"}'::jsonb)$$,
   'service role applies a move');
 select is((select stage from public.journeys where id = current_setting('t.j1')::uuid), 4::smallint, 'stage moved');
 select is(
@@ -20,7 +20,7 @@ select is(
   1, 'the move wrote one audit row');
 select throws_ok(
   $$select public.apply_journey_event(current_setting('t.j1')::uuid, 'APPROVE_VCTE', 3::smallint, false, 4::smallint, false,
-      '00000000-0000-4000-8000-000000000001', 'doctor')$$,
+      '00000000-0000-4000-8000-000000000001', 'doctor', '{}'::jsonb, null, null, null, null, null, null, '{"kind":"vcte_approve"}'::jsonb)$$,
   '40001', null, 'a stale move is rejected');
 select is(
   (select count(*)::int from public.journey_events where journey_id = current_setting('t.j1')::uuid and event = 'APPROVE_VCTE'),

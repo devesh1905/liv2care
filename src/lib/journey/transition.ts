@@ -26,7 +26,15 @@ export type ReportEffect = {
 /** The clinician's review. FIB-4 and the summary are typed by hand; they go to `reviews` only, never to the audit detail. */
 export type ReviewEffect = { fib4Text: string; summary: string; recommendsVcte: boolean };
 
-export type Effects = { booking?: BookingEffect; report?: ReportEffect; review?: ReviewEffect };
+/** The treating doctor's decision. `reason` is one of the preset decline reasons; no free clinical text is stored here. */
+export type DecisionEffect = {
+  kind: "vcte_approve" | "vcte_decline" | "rereview" | "next_step";
+  reason?: string;
+  nextStep?: NextStepType;
+  followUpMonths?: number;
+};
+
+export type Effects = { booking?: BookingEffect; report?: ReportEffect; review?: ReviewEffect; decision?: DecisionEffect };
 
 /** Hours until the next pending action is overdue. */
 const TASK_HOURS = 24;
@@ -70,12 +78,22 @@ export type TransitionResult =
   | { ok: true; stage: Stage; missed: boolean; eventId: number }
   | { ok: false; error: TransitionError | { code: "not_found" | "stale" | "invalid_detail" | "invalid_payload"; message: string } };
 
-const NEEDS_BOOKING = ["BOOK", "RESCHEDULE"];
 const REPORT_KIND_FOR: Record<string, ReportEffect["kind"]> = { LAB_UPLOAD: "lab", CENTRE_UPLOAD: "fibroscan" };
+const DECISION_KIND_FOR: Record<string, DecisionEffect["kind"]> = {
+  APPROVE_VCTE: "vcte_approve",
+  DECLINE_VCTE: "vcte_decline",
+  REQUEST_REREVIEW: "rereview",
+  CHOOSE_NEXT_STEP: "next_step",
+};
+
+/** Routine follow-up is booked by the platform at once; every other booking is made by the patient. */
+function takesBooking(event: JourneyEvent): boolean {
+  return event.type === "BOOK" || event.type === "RESCHEDULE" || (event.type === "CHOOSE_NEXT_STEP" && event.step === "routine");
+}
 
 function checkEffects(event: JourneyEvent, effects: Effects): string | null {
-  if (NEEDS_BOOKING.includes(event.type) && !effects.booking) return "A booking is required";
-  if (!NEEDS_BOOKING.includes(event.type) && effects.booking) return "This event does not take a booking";
+  if (takesBooking(event) && !effects.booking) return "A booking is required";
+  if (!takesBooking(event) && effects.booking) return "This event does not take a booking";
   const kind = REPORT_KIND_FOR[event.type];
   if (kind && effects.report?.kind !== kind) return "A report of the right kind is required";
   if (!kind && effects.report) return "This event does not take a report";
@@ -83,6 +101,18 @@ function checkEffects(event: JourneyEvent, effects: Effects): string | null {
     if (!effects.review || !effects.review.fib4Text.trim() || !effects.review.summary.trim()) return "The FIB-4 text and the summary are required";
   } else if (effects.review) {
     return "This event does not take a review";
+  }
+
+  const decisionKind = DECISION_KIND_FOR[event.type];
+  const d = effects.decision;
+  if (!decisionKind) return d ? "This event does not take a decision" : null;
+  if (!d || d.kind !== decisionKind) return "A matching decision record is required";
+  if (event.type === "DECLINE_VCTE" && d.reason !== event.reason) return "The decision must carry the same preset reason";
+  if (event.type === "CHOOSE_NEXT_STEP") {
+    if (d.nextStep !== event.step) return "The decision must name the chosen next step";
+    if (event.step === "routine" && !(Number.isInteger(d.followUpMonths) && d.followUpMonths! >= 1 && d.followUpMonths! <= 36)) {
+      return "Routine follow-up needs a number of months between 1 and 36";
+    }
   }
   return null;
 }
@@ -175,6 +205,14 @@ export function supabaseJourneyStore(admin: SupabaseClient): JourneyStore {
             }
           : null,
         p_next_task: req.nextTask,
+        p_decision: req.effects.decision
+          ? {
+              kind: req.effects.decision.kind,
+              reason: req.effects.decision.reason ?? null,
+              next_step: req.effects.decision.nextStep ?? null,
+              follow_up_months: req.effects.decision.followUpMonths ?? null,
+            }
+          : null,
         p_review: req.effects.review
           ? { fib4_text: req.effects.review.fib4Text, summary: req.effects.review.summary, recommends_vcte: req.effects.review.recommendsVcte }
           : null,
