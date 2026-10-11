@@ -2,9 +2,13 @@
  * English message templates (mocked sending). Logistics only: never a lab value, score or clinical text.
  * Hindi and the regional language arrive with Kanya's content/messages.md.
  */
+
+/** The patient's progress page, added to the first message so they can check their journey at any time. */
+const trackLine = (progress?: string) => (progress ? `\nTrack your progress: ${progress}` : "");
+
 export const templates = {
-  testsOrdered: (url: string, ultrasound: boolean) =>
-    `Your doctor has requested some blood tests${ultrasound ? " and an ultrasound" : ""}. Tap to book an appointment at a nearby lab: ${url}`,
+  testsOrdered: (url: string, ultrasound: boolean, progress?: string) =>
+    `Your doctor has requested some blood tests${ultrasound ? " and an ultrasound" : ""}. Tap to book an appointment at a nearby lab: ${url}${trackLine(progress)}`,
   fibroscanApproved: (url: string) =>
     `Your doctor has recommended a FibroScan. Tap to book at a nearby diagnostic centre: ${url}`,
   furtherEvaluation: (url: string) => `Your doctor has ordered an additional investigation. Tap to book: ${url}`,
@@ -16,6 +20,6 @@ export const templates = {
     `Booking confirmed: ${place}, ${slot}. We will remind you the day before.`,
   rescheduled: (place: string, slot: string) => `Rescheduled: ${place}, ${slot}.`,
   reminder: (url: string) => `Reminder: your next step is overdue. Tap to continue: ${url}`,
-  existingReportUsed: () =>
-    "Your doctor will use your existing lab reports, with your consent. No repeat test is needed. We will update you after the review.",
+  existingReportUsed: (progress?: string) =>
+    `Your doctor will use your existing lab reports, with your consent. No repeat test is needed. We will update you after the review.${trackLine(progress)}`,
 } as const;

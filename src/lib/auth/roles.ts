@@ -1,7 +1,7 @@
 import type { Role } from "@/lib/journey/types";
 
 /** Staff roles stored in profiles.role. The patient has no account; they use booking links. */
-export type StaffRole = Exclude<Role, "patient">;
+export type StaffRole = Exclude<Role, "patient" | "system">;
 
 export const STAFF_ROLES: readonly StaffRole[] = ["doctor", "clinician", "lab", "centre", "ops"];
 

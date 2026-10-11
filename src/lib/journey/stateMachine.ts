@@ -67,7 +67,7 @@ const RULES: { [K in JourneyEvent["type"]]: Rule } = {
   },
   // Follow-up visits are at the doctor's own clinic or at sites with no login, so the doctor and ops can confirm them too.
   MARK_ATTENDED: { roles: ["lab", "centre", "doctor", "ops"], from: [STAGE.NEXT_BOOKED], to: STAGE.COMPLETE },
-  SEND_REMINDER: { roles: ["ops"], from: OPEN, to: (s) => s.stage },
+  SEND_REMINDER: { roles: ["ops", "system"], from: OPEN, to: (s) => s.stage },
 };
 
 /** Decide what an event does to a journey. Never throws and never touches storage. */

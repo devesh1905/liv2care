@@ -15,7 +15,8 @@
     "db:start": "supabase start",
     "test:int": "vitest run --config vitest.int.config.mts",
     "e2e": "playwright test",
-    "seed:files": "node scripts/seed-report-files.mjs"
+    "seed:files": "node scripts/seed-report-files.mjs",
+    "verify:heavy": "bash scripts/verify-heavy.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

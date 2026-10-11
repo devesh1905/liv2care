@@ -5,8 +5,9 @@ import { STAGE } from "@/lib/journey/stages";
 import { startJourney } from "@/lib/journey/start";
 import { supabaseJourneyStore, transition } from "@/lib/journey/transition";
 import { bookForLink, loadBookingContext } from "./book";
-import { hashToken, issueBookingLink, resolveBookingLink } from "./links";
+import { hashToken, issueBookingLink, issueProgressLink, resolveBookingLink } from "./links";
 import { loadSlotOptions } from "./options";
+import { loadTimelineView } from "./timeline-view";
 
 /** Patient booking through a link, on the real database (needs `npx supabase start`). */
 const DOCTOR = { id: "00000000-0000-4000-8000-000000000001", role: "doctor" } as const;
@@ -64,6 +65,44 @@ describe("booking links", () => {
     const token = tokenOf(await issueBookingLink(admin, journeyId));
     const { data } = await admin.from("booking_links").select("token_hash").eq("journey_id", journeyId);
     expect(data?.map((r) => r.token_hash)).toEqual([hashToken(token)]);
+  });
+});
+
+describe("progress links", () => {
+  it("are separate from booking links in both directions, and survive a new booking link", async () => {
+    const journeyId = await newJourney();
+    const view = (await issueProgressLink(admin, journeyId)).split("/patient/")[1];
+    const book = tokenOf(await issueBookingLink(admin, journeyId));
+
+    expect(await resolveBookingLink(admin, view, "view")).toBe(journeyId);
+    expect(await resolveBookingLink(admin, book, "book")).toBe(journeyId);
+    expect(await resolveBookingLink(admin, view, "book")).toBeNull(); // a progress link cannot book
+    expect(await resolveBookingLink(admin, book, "view")).toBeNull();
+
+    await issueBookingLink(admin, journeyId); // sending a new booking link must not break the progress link
+    expect(await resolveBookingLink(admin, view, "view")).toBe(journeyId);
+    expect(await resolveBookingLink(admin, book, "book")).toBeNull();
+  });
+
+  it("show stage, place and time only, and follow the journey", async () => {
+    const journeyId = await newJourney("hi");
+    const token = (await issueProgressLink(admin, journeyId)).split("/patient/")[1];
+
+    const first = await loadTimelineView(token);
+    expect(first).toMatchObject({ kind: "ready", language: "hi", firstName: "Link", stage: STAGE.ORDERED, missed: false, appointment: null });
+
+    const bookToken = tokenOf(await issueBookingLink(admin, journeyId));
+    const [option] = await loadSlotOptions(admin, "lab");
+    await bookForLink(admin, bookToken, option.partnerId, option.slotId);
+
+    const after = await loadTimelineView(token);
+    expect(after).toMatchObject({ kind: "ready", stage: STAGE.LAB_BOOKED });
+    expect(after.kind === "ready" && after.appointment?.place).toBe(option.partnerName);
+    // nothing but these fields is ever loaded for the patient
+    expect(Object.keys(after).sort()).toEqual(["appointment", "firstName", "kind", "language", "missed", "stage"]);
+
+    expect(await loadTimelineView("x".repeat(32))).toEqual({ kind: "invalid" });
+    expect(await loadTimelineView(bookToken)).toEqual({ kind: "invalid" }); // a booking token does not open the progress page
   });
 });
 

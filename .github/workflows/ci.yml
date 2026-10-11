@@ -37,3 +37,31 @@ jobs:
           echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL /tmp/sb.json)" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r .SERVICE_ROLE_KEY /tmp/sb.json)" >> "$GITHUB_ENV"
       - run: npm run test:int
+
+  e2e:
+    # Browser tests through the real screens, on GitHub's servers so no laptop has to run Docker and a browser together.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx supabase start -x studio,imgproxy,vector,logflare,edge-runtime,realtime,mailpit
+      - name: Point the app and the tests at the local Supabase
+        run: |
+          npx supabase status -o json > /tmp/sb.json
+          echo "NEXT_PUBLIC_SUPABASE_URL=$(jq -r .API_URL /tmp/sb.json)" >> "$GITHUB_ENV"
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(jq -r .ANON_KEY /tmp/sb.json)" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(jq -r .SERVICE_ROLE_KEY /tmp/sb.json)" >> "$GITHUB_ENV"
+          echo "DEMO_LOGINS=on" >> "$GITHUB_ENV"
+          echo "PW_CHANNEL=chrome" >> "$GITHUB_ENV"
+      - run: npm run e2e
+      - name: Keep the traces when a test fails
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7

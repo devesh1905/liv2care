@@ -44,3 +44,7 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# heavy-check output
+/verify-heavy.log
+/screenshots/
