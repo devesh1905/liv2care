@@ -62,7 +62,8 @@ test("the patient's progress page follows the journey, in English and Hindi", as
   // a booking link does not open the progress page, and a progress link cannot book
   const bookingLink = await linkFromMessage(journeyId, "Your doctor has requested");
   await patient.goto(bookingLink.replace("/book/", "/patient/"));
-  await expect(patient.getByRole("alert")).toBeVisible();
+  // (Next.js adds its own hidden alert element for screen readers, so match the message itself)
+  await expect(patient.getByRole("alert").filter({ hasText: "expired or is not valid" })).toBeVisible();
 });
 
 test("operations sees overdue actions, sends a reminder, and the audit trail and message log record it", async ({ browser }) => {
