@@ -120,7 +120,8 @@ describe("booking through a link", () => {
     const { data: journey } = await admin.from("journeys").select("stage").eq("id", journeyId).single();
     expect(journey?.stage).toBe(STAGE.LAB_BOOKED);
     const { data: msgs } = await admin.from("messages").select("channel, body").eq("journey_id", journeyId);
-    expect(msgs?.some((m) => m.channel === "SMS" && m.body.startsWith("Booking confirmed"))).toBe(true);
+    // this patient's language is Hindi, so the confirmation is in Hindi
+    expect(msgs?.some((m) => m.channel === "SMS" && m.body.startsWith("बुकिंग पक्की हो गई:"))).toBe(true);
 
     expect((await loadBookingContext(admin, token))?.bookable).toBe(false);
     expect(await bookForLink(admin, token, option.partnerId, option.slotId)).toMatchObject({ ok: false, code: "not_bookable" });

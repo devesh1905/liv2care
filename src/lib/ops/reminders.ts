@@ -3,7 +3,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendBookingLink } from "@/lib/booking/notify";
 import { transitionJourney } from "@/lib/journey/server";
 import type { Actor } from "@/lib/journey/types";
-import { templates } from "@/lib/messages/templates";
 import { pickReminders } from "./pick";
 
 /** At most this many reminders in one run, so a backlog can never turn into a flood of messages. */
@@ -35,7 +34,7 @@ export async function sendOverdueReminders(admin: SupabaseClient, actor: Actor, 
       skipped += 1; // closed meanwhile, or the state moved
       continue;
     }
-    await sendBookingLink(admin, journeyId, templates.reminder, "SMS");
+    await sendBookingLink(admin, journeyId, (url, m) => m.reminder(url), "SMS");
     sent += 1;
   }
   return { sent, skipped };

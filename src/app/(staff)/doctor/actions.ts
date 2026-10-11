@@ -7,7 +7,7 @@ import { startJourney } from "@/lib/journey/start";
 import { issueProgressLink } from "@/lib/booking/links";
 import { sendBookingLink } from "@/lib/booking/notify";
 import { mockProvider } from "@/lib/messages/provider";
-import { templates } from "@/lib/messages/templates";
+import { templatesFor } from "@/lib/messages/templates";
 import { checkPdf } from "@/lib/reports/pdf";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -80,10 +80,10 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
     // The first message also carries the patient's progress page, which stays valid for weeks.
     const progress = await issueProgressLink(admin, journeyId);
     if (route === "existing_report") {
-      await mockProvider(admin).send({ journeyId, channel: "WhatsApp", body: templates.existingReportUsed(progress) });
+      await mockProvider(admin).send({ journeyId, channel: "WhatsApp", body: templatesFor(language).existingReportUsed(progress) });
       demoLink = progress; // nothing for the patient to book yet, so the demo link shows their progress
     } else {
-      demoLink = await sendBookingLink(admin, journeyId, (url) => templates.testsOrdered(url, ultrasound, progress));
+      demoLink = await sendBookingLink(admin, journeyId, (url, m) => m.testsOrdered(url, ultrasound, progress));
     }
   } catch {
     // The journey exists; the message log can be filled in later.
