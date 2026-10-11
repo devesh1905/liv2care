@@ -125,6 +125,14 @@ export function EnrolForm() {
         </CheckRow>
 
         <FormMessage error={state.error} success={state.success} />
+        {state.patientLink && (
+          <p className="text-sm">
+            <a href={state.patientLink} target="_blank" rel="noopener" className="font-semibold text-primary underline underline-offset-4">
+              Open the patient&apos;s page
+            </a>{" "}
+            <span className="text-muted-foreground">to see what they would see (demo only).</span>
+          </p>
+        )}
 
         <Button type="submit" size="lg" disabled={pending} className="self-start">
           {pending ? "Enrolling…" : "Enrol patient"}
