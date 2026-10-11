@@ -8,9 +8,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-public-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Public Sans Variable", "Noto Sans Devanagari Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
-  --font-heading: var(--font-manrope), var(--font-public-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Manrope Variable", "Public Sans Variable", "Noto Sans Devanagari Variable", ui-sans-serif, system-ui, sans-serif;
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
@@ -77,7 +77,7 @@
   }
   /* Hindi reads best in a Devanagari-first stack with a little more line height. */
   :lang(hi) {
-    font-family: var(--font-devanagari), var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+    font-family: "Noto Sans Devanagari Variable", "Public Sans Variable", ui-sans-serif, system-ui, sans-serif;
     line-height: 1.7;
   }
   :focus-visible {

@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope, Noto_Sans_Devanagari, Public_Sans } from "next/font/google";
-import "./globals.css";
 
-// Body text, headings, and Hindi (Devanagari) text for patient screens.
-const publicSans = Public_Sans({ variable: "--font-public-sans", subsets: ["latin"] });
-const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"], weight: ["600", "700", "800"] });
-const devanagari = Noto_Sans_Devanagari({ variable: "--font-devanagari", subsets: ["devanagari"] });
+// Fonts ship inside the project (no download at build time, so a build never fails because Google Fonts was slow):
+// Public Sans for body text, Manrope for headings, Noto Sans Devanagari for Hindi.
+import "@fontsource-variable/public-sans";
+import "@fontsource-variable/manrope";
+import "@fontsource-variable/noto-sans-devanagari";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "Liv2care", template: "%s · Liv2care" },
@@ -17,7 +17,7 @@ export const viewport: Viewport = { themeColor: "#0b63b6", width: "device-width"
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${publicSans.variable} ${manrope.variable} ${devanagari.variable} h-full antialiased`}>
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
