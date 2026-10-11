@@ -2,13 +2,13 @@
 
 A click path through the whole pathway, for a reviewer or for rehearsing the demo. Kanya's demo script will replace the wording; this is the route and what to point out.
 
-You need the five demo passwords from the team. Open the home page and use the "Try it yourself" buttons: each opens a panel on the right, where you type that role's password. Everything is pretend: patients, messages and reports.
+You need the five demo passwords from the team. Open the home page, choose **Demo access**, then pick a role: each has its own sign-in page, where you type that role's password. Everything is pretend: patients, messages and reports.
 
 Tip: the sample patients (P-1001 to P-1006) are already at different points of the journey, so you can skip waiting. Use a new patient for the first half and the samples for the rest.
 
 | Time | Who | Do this | Point out |
 |---|---|---|---|
-| 0:00 | Home page | Read the one-line idea, then click **Treating doctor** | Doctor decides, Liv2care coordinates, the patient completes, the doctor sees the outcome. The software never diagnoses. |
+| 0:00 | Home page | Read the one-line idea and the doctor and patient sections, click **Demo access**, then **Treating doctor** | Doctor decides, Liv2care coordinates, the patient completes, the doctor sees the outcome. The software never diagnoses. |
 | 0:20 | Doctor | **Identify a patient**: name, age, tick consent, choose **Option 2: order the tests**, **Enrol patient** | Two ways in: use a report the patient already has, or order the tests. Consent is required. |
 | 0:40 | Patient (on a phone-sized window) | Click **Open the patient's page**. Tap **Nearest**, then **Confirm booking**. Switch to **हिन्दी** | No account or app. One link in a text message. The helper suggests a place and time; the choice is made by code and the AI only words the reason. Hindi throughout. |
 | 1:00 | Lab | Sign out, sign in as **Lab**. Upload any small PDF for the new patient | Labs see only their own visits. Uploading moves the journey forward and puts the report in the clinician's queue. |
