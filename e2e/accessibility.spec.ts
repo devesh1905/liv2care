@@ -100,6 +100,7 @@ test("patient pages in English and Hindi, on a phone", async ({ browser }) => {
     await scan(page, `booking page ${lang}`);
     await page.getByRole("button", { name: lang === "en" ? "Nearest" : "सबसे नज़दीक" }).click();
     await expect(page.getByRole("status")).toContainText(/\w/);
+    await page.waitForTimeout(500); // the chosen slot fades to its new colour; scan once it has settled
     await scan(page, `booking page with a suggestion ${lang}`);
 
     await page.goto(`${progress}?lang=${lang}`);

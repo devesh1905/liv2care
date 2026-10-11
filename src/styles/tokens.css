@@ -34,7 +34,7 @@
   --sidebar-ring: #0b63b6;
 
   /* Status colours used on pills and timelines */
-  --ok: #1b7f4b;
+  --ok: #15693c; /* 5.8:1 on --ok-soft; the old #1b7f4b was 4.4:1 */
   --ok-soft: #e1f3e9;
   --warn: #9a5b00;
   --warn-soft: #fcefd6;

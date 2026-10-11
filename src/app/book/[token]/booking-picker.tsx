@@ -101,7 +101,7 @@ export function BookingPicker({ token, lang, options, suggestedSlotId }: { token
                         }}
                       />
                       <span className="flex flex-col leading-tight">
-                        <span className="text-xs font-medium opacity-80">{formatSlotParts(o.startsAt).day}</span>
+                        <span className={cn("text-xs font-medium", on ? "text-primary-foreground" : "text-muted-foreground")}>{formatSlotParts(o.startsAt).day}</span>
                         <span className="whitespace-nowrap text-base">{formatSlotParts(o.startsAt).time}</span>
                       </span>
                     </label>
