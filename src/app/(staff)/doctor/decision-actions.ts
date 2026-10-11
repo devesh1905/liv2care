@@ -8,7 +8,8 @@ import { transitionJourney } from "@/lib/journey/server";
 import type { Effects } from "@/lib/journey/transition";
 import { DECLINE_REASONS, type JourneyEvent, type NextStepType } from "@/lib/journey/types";
 import { mockProvider } from "@/lib/messages/provider";
-import { templates } from "@/lib/messages/templates";
+import { languageOf } from "@/lib/messages/language";
+import { templatesFor } from "@/lib/messages/templates";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -41,7 +42,7 @@ export async function approveFibroscan(_prev: DecisionState, form: FormData): Pr
   if ("error" in ctx) return ctx;
   const result = await run(ctx.journeyId, ctx.doctor.id, { type: "APPROVE_VCTE" }, {}, { decision: { kind: "vcte_approve" } });
   if (!result.ok) return { error: result.error.message };
-  await sendBookingLink(createAdminClient(), ctx.journeyId, templates.fibroscanApproved);
+  await sendBookingLink(createAdminClient(), ctx.journeyId, (url, m) => m.fibroscanApproved(url));
   redirect("/doctor?notice=approved");
 }
 
@@ -87,13 +88,13 @@ export async function chooseNextStep(_prev: DecisionState, form: FormData): Prom
       },
     );
     if (!result.ok) return { error: result.error.message };
-    await mockProvider(admin).send({ journeyId: ctx.journeyId, channel: "SMS", body: templates.routineFollowUp(months) }).catch(() => undefined);
+    await mockProvider(admin).send({ journeyId: ctx.journeyId, channel: "SMS", body: templatesFor(await languageOf(admin, ctx.journeyId)).routineFollowUp(months) }).catch(() => undefined);
     redirect("/doctor?notice=routine");
   }
 
   const result = await run(ctx.journeyId, ctx.doctor.id, { type: "CHOOSE_NEXT_STEP", step }, { step }, { decision: { kind: "next_step", nextStep: step } });
   if (!result.ok) return { error: result.error.message };
-  await sendBookingLink(admin, ctx.journeyId, step === "eval" ? templates.furtherEvaluation : templates.specialistReferral);
+  await sendBookingLink(admin, ctx.journeyId, (url, m) => (step === "eval" ? m.furtherEvaluation(url) : m.specialistReferral(url)));
   redirect(`/doctor?notice=${step}`);
 }
 
@@ -106,6 +107,6 @@ export async function recordFollowUp(_prev: DecisionState, form: FormData): Prom
 
   const result = await run(ctx.journeyId, ctx.doctor.id, { type: outcome === "attended" ? "MARK_ATTENDED" : "MARK_MISSED" }, {}, {});
   if (!result.ok) return { error: result.error.message };
-  if (outcome === "missed") await sendBookingLink(createAdminClient(), ctx.journeyId, templates.missed, "SMS");
+  if (outcome === "missed") await sendBookingLink(createAdminClient(), ctx.journeyId, (url, m) => m.missed(url), "SMS");
   redirect(`/doctor?notice=${outcome === "attended" ? "attended" : "missed"}`);
 }

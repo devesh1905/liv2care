@@ -17,7 +17,8 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
   await connection();
   const { token } = await params;
   const wanted = (await searchParams).lang;
-  const view = await loadBookingView(token);
+  const pick = (await searchParams).pick;
+  const view = await loadBookingView(token, typeof pick === "string" ? pick : undefined);
 
   const lang: Lang = isLang(wanted) ? wanted : view.kind === "ready" || view.kind === "booked" ? view.language : "en";
   const other: Lang = lang === "en" ? "hi" : "en";
@@ -28,7 +29,7 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
         <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 px-4 py-3">
           <Logo />
           <a
-            href={`?lang=${other}`}
+            href={`?lang=${other}${typeof pick === "string" ? `&pick=${encodeURIComponent(pick)}` : ""}`}
             lang={other}
             className="inline-flex h-10 items-center gap-2 rounded-lg border bg-card px-3 text-sm font-semibold shadow-sm hover:bg-muted"
           >
@@ -75,7 +76,7 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
               </h2>
             </div>
             {view.reschedule && <p className="rounded-2xl bg-warn-soft p-4 font-semibold text-warn">{t(lang, "resched")}</p>}
-            <BookingPicker token={token} lang={lang} options={view.options} />
+            <BookingPicker token={token} lang={lang} options={view.options} suggestedSlotId={view.suggestedSlotId} />
           </>
         )}
       </main>

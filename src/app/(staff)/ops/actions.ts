@@ -7,7 +7,6 @@ import { sendBookingLink } from "@/lib/booking/notify";
 import { nextAction } from "@/lib/journey/derived";
 import { transitionJourney } from "@/lib/journey/server";
 import type { Stage } from "@/lib/journey/stages";
-import { templates } from "@/lib/messages/templates";
 import { sendOverdueReminders } from "@/lib/ops/reminders";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -37,7 +36,7 @@ export async function sendReminder(_prev: OpsState, form: FormData): Promise<Ops
 
   const result = await transitionJourney(ctx.journeyId, { type: "SEND_REMINDER" }, { id: ctx.user.id, role: "ops" });
   if (!result.ok) return { error: result.error.message };
-  await sendBookingLink(createAdminClient(), ctx.journeyId, templates.reminder, "SMS");
+  await sendBookingLink(createAdminClient(), ctx.journeyId, (url, m) => m.reminder(url), "SMS");
   redirect("/ops?notice=reminded");
 }
 
@@ -47,7 +46,7 @@ export async function markVisitMissed(_prev: OpsState, form: FormData): Promise<
   if ("error" in ctx) return ctx;
   const result = await transitionJourney(ctx.journeyId, { type: "MARK_MISSED" }, { id: ctx.user.id, role: "ops" });
   if (!result.ok) return { error: result.error.message };
-  await sendBookingLink(createAdminClient(), ctx.journeyId, templates.missed, "SMS");
+  await sendBookingLink(createAdminClient(), ctx.journeyId, (url, m) => m.missed(url), "SMS");
   redirect("/ops?notice=missed");
 }
 

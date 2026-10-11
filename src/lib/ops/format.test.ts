@@ -19,6 +19,7 @@ describe("maskLinks", () => {
 describe("eventLabel and actorLabel", () => {
   it("name the known events and humanise the unknown ones", () => {
     expect(eventLabel("LAB_UPLOAD")).toBe("Lab report uploaded");
+    expect(eventLabel("RESCHEDULE_OFFER_SENT")).toBe("New time offered to the patient");
     expect(eventLabel("SOMETHING_NEW")).toBe("Something new");
     expect(actorLabel("ops")).toBe("Operations");
     expect(actorLabel("stranger")).toBe("stranger");

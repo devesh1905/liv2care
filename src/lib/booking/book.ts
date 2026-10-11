@@ -7,7 +7,7 @@ import { supabaseJourneyStore, transition } from "@/lib/journey/transition";
 import type { JourneyEvent, JourneyState, NextStepType } from "@/lib/journey/types";
 import type { Lang } from "@/lib/i18n/patient";
 import { mockProvider } from "@/lib/messages/provider";
-import { templates } from "@/lib/messages/templates";
+import { templatesFor } from "@/lib/messages/templates";
 import { formatSlot } from "@/lib/format/slot";
 import { resolveBookingLink } from "./links";
 
@@ -85,7 +85,7 @@ export async function bookForLink(admin: SupabaseClient, token: string, partnerI
     .send({
       journeyId: ctx.journeyId,
       channel: "SMS",
-      body: ctx.event === "RESCHEDULE" ? templates.rescheduled(partner.name, slotLabel) : templates.bookingConfirmed(partner.name, slotLabel),
+      body: ctx.event === "RESCHEDULE" ? templatesFor(ctx.patient.language).rescheduled(partner.name, slotLabel) : templatesFor(ctx.patient.language).bookingConfirmed(partner.name, slotLabel),
     })
     .catch(() => undefined);
   return { ok: true, partnerName: partner.name, slotLabel };

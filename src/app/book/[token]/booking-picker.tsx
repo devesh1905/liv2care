@@ -15,9 +15,10 @@ const PREFS: { key: Preference; icon: typeof MapPin }[] = [
   { key: "morning", icon: Sunrise },
 ];
 
-export function BookingPicker({ token, lang, options }: { token: string; lang: Lang; options: SlotOption[] }) {
-  const [chosen, setChosen] = useState<{ partnerId: string; slotId: string } | null>(null);
-  const [reason, setReason] = useState<string | null>(null);
+export function BookingPicker({ token, lang, options, suggestedSlotId }: { token: string; lang: Lang; options: SlotOption[]; suggestedSlotId?: string }) {
+  const offered = options.find((o) => o.slotId === suggestedSlotId);
+  const [chosen, setChosen] = useState<{ partnerId: string; slotId: string } | null>(offered ? { partnerId: offered.partnerId, slotId: offered.slotId } : null);
+  const [reason, setReason] = useState<string | null>(offered ? t(lang, "suggestedForYou") : null);
   const [pending, startTransition] = useTransition();
   const [state, action, booking] = useActionState<BookState, FormData>(bookSlot, {});
 

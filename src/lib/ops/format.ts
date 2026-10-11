@@ -24,6 +24,7 @@ const EVENT_LABEL: Record<string, string> = {
   REQUEST_REREVIEW: "Re-review requested",
   CHOOSE_NEXT_STEP: "Next step chosen",
   SEND_REMINDER: "Reminder sent",
+  RESCHEDULE_OFFER_SENT: "New time offered to the patient",
 };
 
 export function eventLabel(event: string): string {
