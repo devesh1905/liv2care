@@ -14,7 +14,7 @@ The software and the AI never diagnose, calculate FIB-4 or any score, or make cl
 | Telemedicine clinician | `/clinician` | Open the original report through a signed link, type FIB-4 and the summary by hand, send both to the doctor. |
 | Lab and diagnostic centre | `/partner` | Manage slots, upload reports, mark visits missed or attended. |
 | Patient | `/book/[token]`, `/patient/[token]` | Book a lab, centre or follow-up from a link (English or Hindi, with a booking helper), reschedule after a miss, and see their progress. No account or app. |
-| Operations | `/ops` | Patient list and completion figures. Pending actions, reminders, audit viewer and metrics are next. |
+| Operations | `/ops` | See what is waiting on whom, spot overdue actions, send reminders (one patient or everyone overdue), suggest and send a new time to a patient who missed a visit, read the audit trail and the message log, and see the headline numbers (completion, lab and FibroScan booking, missed visits, report turnaround). |
 
 Progress against the plan is tracked in `roadmap.md` and `build-plan.md` (kept in the Healthathon folder, outside this repo). The clickable prototype this app grows out of is at https://github.com/devesh1905/liv2care-prototype.
 
@@ -51,7 +51,7 @@ Local ports are 545xx (not Supabase's defaults) so this project can run beside o
 | `node scripts/screenshots.mjs <folder>` | Screenshots of every screen at 360 px and 1280 px | App running |
 | `npx supabase db reset` | Rebuild the local database and reseed | Local Supabase |
 
-CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit tests and build, and in a second job starts Supabase and runs the database and integration tests. Browser tests are not in CI yet.
+CI (`.github/workflows/ci.yml`) runs on every push and pull request in three jobs on GitHub's servers: `check` (lint, typecheck, unit tests, build), `database` (starts Supabase, runs the database and integration tests) and `e2e` (starts Supabase and the app, runs the browser tests in Chrome). Heavy checks are meant to run there, not on a laptop: open a pull request and let CI do the work.
 
 ## Hosted setup (Vercel and Supabase)
 
@@ -78,6 +78,10 @@ supabase/tests/database/ pgTAP tests
 e2e/                     Playwright tests
 scripts/                 screenshots and sample report files
 ```
+
+## Security and privacy
+
+The plain-language summary for reviewers is in [docs/security-and-privacy.md](docs/security-and-privacy.md). A three-minute walk through the demo is in [docs/demo-walkthrough.md](docs/demo-walkthrough.md). To check a deployed site without any password: `node scripts/check-live.mjs <folder> <site-url>`.
 
 ## Rules for contributors and coding agents
 

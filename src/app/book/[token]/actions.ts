@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { bookForLink, loadBookingContext } from "@/lib/booking/book";
+import { aiDeps } from "@/lib/booking/aiLimits";
 import { hashToken } from "@/lib/booking/links";
 import { loadSlotOptions } from "@/lib/booking/options";
 import { isLang, t, type Lang } from "@/lib/i18n/patient";
@@ -28,15 +29,7 @@ export async function suggestSlot(token: string, preference: string, lang: strin
       preference: preference as Preference,
       options,
     },
-    {
-      // A daily budget for the whole app and a smaller one per link, kept in the database.
-      consume: async (key, cap) => {
-        const { data, error } = await admin.rpc("ai_consume", { p_key: key, p_cap: cap });
-        if (error) return false;
-        return data === true;
-      },
-      callerKey: hashToken(token).slice(0, 16),
-    },
+    await aiDeps(admin, hashToken(token).slice(0, 16)),
   );
 }
 
