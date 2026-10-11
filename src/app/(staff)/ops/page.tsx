@@ -10,13 +10,14 @@ import { statusOf } from "@/lib/journey/derived";
 import { STAGE, STAGE_LABEL, type Stage } from "@/lib/journey/stages";
 import { actorLabel, dueText, eventLabel, maskLinks, percent } from "@/lib/ops/format";
 import { createClient } from "@/lib/supabase/server";
-import { MissedButton, ReminderButton, RunRemindersButton } from "./ops-forms";
+import { MissedButton, ReminderButton, RescheduleOffer, RunRemindersButton } from "./ops-forms";
 
 export const metadata = { title: "Operations" };
 
 const NOTICES: Record<string, string> = {
   reminded: "Reminder sent to the patient (simulated). The clock on that action starts again.",
   missed: "Marked missed. A reschedule link was sent to the patient (simulated).",
+  offered: "New time offered. The patient got it with a link to confirm (simulated); nothing is booked until they do.",
 };
 
 const when = (iso: string) =>
@@ -138,6 +139,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/ops">["se
                   {t.owner === "Patient" && <ReminderButton journeyId={t.journey_id} />}
                   {BOOKED_STAGES.includes(state.stage) && !state.missed && <MissedButton journeyId={t.journey_id} />}
                 </div>
+                {state.missed && <RescheduleOffer journeyId={t.journey_id} />}
               </Card>
             );
           })}

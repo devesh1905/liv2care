@@ -13,8 +13,8 @@ export const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process
 });
 
 /** Signs in through the demo buttons (needs DEMO_LOGINS=on locally) in a fresh browser context. */
-export async function signInAs(browser: Browser, role: string): Promise<Page> {
-  const page = await (await browser.newContext()).newPage();
+export async function signInAs(browser: Browser, role: string, viewport?: { width: number; height: number }): Promise<Page> {
+  const page = await (await browser.newContext(viewport ? { viewport } : {})).newPage();
   await page.goto("/login");
   await page.locator(`input[name=role][value=${role}]`).locator("xpath=..").getByRole("button").click();
   await page.waitForURL((u) => !u.pathname.startsWith("/login"));

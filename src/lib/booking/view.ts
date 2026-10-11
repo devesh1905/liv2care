@@ -9,10 +9,10 @@ export type BookingView =
   | { kind: "invalid" }
   | { kind: "nothing" }
   | { kind: "booked"; language: Lang; partnerName: string; slotLabel: string }
-  | { kind: "ready"; language: Lang; firstName: string; partnerKind: PartnerKind; reschedule: boolean; options: SlotOption[] };
+  | { kind: "ready"; language: Lang; firstName: string; partnerKind: PartnerKind; reschedule: boolean; options: SlotOption[]; suggestedSlotId?: string };
 
 /** What the patient sees at /book/<token>. Reads logistics data only. */
-export async function loadBookingView(token: string): Promise<BookingView> {
+export async function loadBookingView(token: string, pick?: string): Promise<BookingView> {
   const admin = createAdminClient();
   const ctx = await loadBookingContext(admin, token);
   if (!ctx) return { kind: "invalid" };
@@ -32,12 +32,15 @@ export async function loadBookingView(token: string): Promise<BookingView> {
       : { kind: "nothing" };
   }
 
+  const options = await loadSlotOptions(admin, ctx.kind);
   return {
     kind: "ready",
     language: ctx.patient.language,
     firstName: ctx.patient.firstName,
     partnerKind: ctx.kind,
     reschedule: ctx.event === "RESCHEDULE",
-    options: await loadSlotOptions(admin, ctx.kind),
+    options,
+    // a time offered in a message opens already selected, but only if it is still open
+    suggestedSlotId: pick && options.some((o) => o.slotId === pick) ? pick : undefined,
   };
 }
