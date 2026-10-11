@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/session";
+import { aiDeps } from "@/lib/booking/aiLimits";
 import { hashToken } from "@/lib/booking/links";
 import { sendRescheduleOffer, suggestForMissed, type Offer } from "@/lib/booking/reschedule";
 import type { Stage } from "@/lib/journey/stages";
@@ -32,14 +33,7 @@ export async function suggestReschedule(journeyId: string): Promise<SuggestState
   const offer = await suggestForMissed(
     supabase,
     { stage: row.stage as Stage, nextStep: (row.next_step as NextStepType | null) ?? null, language: row.patient_language === "hi" ? "hi" : "en" },
-    {
-      // the same daily and per-caller limits as the patient's booking helper
-      consume: async (key, cap) => {
-        const { data, error } = await admin.rpc("ai_consume", { p_key: key, p_cap: cap });
-        return !error && data === true;
-      },
-      callerKey: hashToken(`ops:${journeyId}`).slice(0, 16),
-    },
+    await aiDeps(admin, hashToken(`ops:${journeyId}`).slice(0, 16)),
   );
   return offer ? { offer } : { error: "No open times right now. Ask the place to add slots." };
 }
