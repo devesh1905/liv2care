@@ -19,7 +19,7 @@ const ROLE_BLURB: Record<StaffRole, string> = {
   clinician: "Open a patient's report, type the FIB-4 and a short summary, and send it back to the doctor.",
   lab: "Add appointment times, upload a report, and mark visits as attended or missed.",
   centre: "The same for FibroScan visits: upload the scan report and mark the visit.",
-  ops: "See every patient, where they are in the journey, and the overall progress numbers.",
+  ops: "See every patient and what is overdue, send reminders, and read the activity log and the progress numbers.",
 };
 
 /**

@@ -79,14 +79,14 @@ export default function Home() {
                 <strong>Labs and scan centres</strong> can add appointment times, upload reports, and mark visits as attended or missed.
               </li>
               <li>
-                <strong>Operations</strong> can see every patient, where they are in the journey, and the overall progress numbers.
+                <strong>Operations</strong> can see every patient and what is waiting on whom, spot overdue actions, send reminders, and read the activity log and the (pretend) message log, along with the overall progress numbers.
               </li>
               <li>
-                <strong>The patient</strong> has no login. After the doctor orders tests for a pretend patient, a link appears to open the patient&apos;s own page, where they pick a lab and a time (in English or Hindi).
+                <strong>The patient</strong> has no login. After the doctor orders tests for a pretend patient, a link appears to open the patient&apos;s own page, where they pick a lab and a time (in English or Hindi). Patients also get a simple progress page that shows where they are on the journey.
               </li>
             </ul>
             <p className="mt-3 text-sm text-muted-foreground">
-              Tip: start as the doctor and add a patient, then sign out and come back as the other roles to follow that patient along. Reminders and a full activity log for operations are coming next.
+              Tip: start as the doctor and add a patient, then sign out and come back as the other roles to follow that patient along.
             </p>
           </div>
         </section>
