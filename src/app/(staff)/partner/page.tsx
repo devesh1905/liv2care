@@ -114,7 +114,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
                 )}
                 {actions.uploadReport && <UploadForm journeyId={v.journey_id} label={uploadLabel} />}
                 <div className="flex flex-wrap gap-3">
-                  {actions.markAttended && <AttendedButton journeyId={v.journey_id} />}
+                  {actions.markAttended && <AttendedButton journeyId={v.journey_id} waitUntil={v.slots ? timeUntil(v.slots.starts_at, nowMs) : null} />}
                   {actions.markMissed && <MissedButton journeyId={v.journey_id} waitUntil={v.slots ? timeUntil(v.slots.starts_at, nowMs) : null} />}
                 </div>
               </Card>

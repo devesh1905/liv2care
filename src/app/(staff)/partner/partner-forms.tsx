@@ -69,8 +69,8 @@ export const MissedButton = ({ journeyId, waitUntil }: { journeyId: string; wait
   </ButtonForm>
 );
 
-export const AttendedButton = ({ journeyId }: { journeyId: string }) => (
-  <ButtonForm journeyId={journeyId} action={markAttended} icon={<Check aria-hidden="true" />}>
+export const AttendedButton = ({ journeyId, waitUntil }: { journeyId: string; waitUntil?: string | null }) => (
+  <ButtonForm journeyId={journeyId} action={markAttended} icon={<Check aria-hidden="true" />} waitUntil={waitUntil}>
     Mark attended
   </ButtonForm>
 );

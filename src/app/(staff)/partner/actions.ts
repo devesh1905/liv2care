@@ -69,15 +69,13 @@ async function simpleEvent(form: FormData, type: "MARK_MISSED" | "MARK_ATTENDED"
   const { data: visible } = await supabase.from("journeys").select("id").eq("id", journeyId).maybeSingle();
   if (!visible) return { error: "That visit is not booked at your site." };
 
-  if (type === "MARK_MISSED") {
-    // A visit can only be missed once its slot has started. Visits without a recorded slot are not held back.
-    const { data: booked } = await supabase.from("bookings").select("slots(starts_at)").eq("journey_id", journeyId).eq("status", "booked");
-    const upcoming = (booked ?? []).some((b) => {
-      const slot = b.slots as unknown as { starts_at: string } | null;
-      return slot && new Date(slot.starts_at).getTime() > Date.now();
-    });
-    if (upcoming) return { error: "This visit cannot be marked missed until its slot has started." };
-  }
+  // A visit can only be marked attended or missed once its slot has started. Visits without a recorded slot are not held back.
+  const { data: booked } = await supabase.from("bookings").select("slots(starts_at)").eq("journey_id", journeyId).eq("status", "booked");
+  const upcoming = (booked ?? []).some((b) => {
+    const slot = b.slots as unknown as { starts_at: string } | null;
+    return slot && new Date(slot.starts_at).getTime() > Date.now();
+  });
+  if (upcoming) return { error: "This visit cannot be marked until its slot has started." };
 
   const result = await transitionJourney(journeyId, { type }, { id: user.id, role: user.role });
   if (!result.ok) return { error: result.error.message };
