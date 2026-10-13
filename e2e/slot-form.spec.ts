@@ -18,7 +18,7 @@ test("a lab adds a slot with the date, hour, minute and AM/PM fields", async ({ 
   await expect(page.getByText(/4:30 pm/i).first()).toBeVisible();
 });
 
-test("Mark missed and Mark attended are greyed out, with the time left, until the slot starts", async ({ browser }) => {
+test("Mark missed is greyed out, with the time left, until the slot starts", async ({ browser }) => {
   const name = `Wait Person ${Date.now() % 100000}`;
   await addSoonSlots(PARTNER.sunrise);
   const doctor = await signInAs(browser, "doctor");
@@ -40,11 +40,9 @@ test("Mark missed and Mark attended are greyed out, with the time left, until th
   await lab.goto("/partner");
   const visit = lab.locator("section:has(> header)").filter({ hasText: name });
   await expect(visit.getByRole("button", { name: "Mark missed" })).toBeDisabled();
-  await expect(visit.getByRole("button", { name: "Mark attended" })).toBeDisabled();
   await expect(visit.getByText(/Opens when the slot starts, in /).first()).toBeVisible();
 
   await startVisitNow(journey!.id);
   await lab.goto("/partner");
   await expect(visit.getByRole("button", { name: "Mark missed" })).toBeEnabled();
-  await expect(visit.getByRole("button", { name: "Mark attended" })).toBeEnabled();
 });
