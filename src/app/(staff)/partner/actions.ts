@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/session";
 import { transitionJourney } from "@/lib/journey/server";
 import { sendBookingLink } from "@/lib/booking/notify";
+import { parseSlotInput } from "@/lib/partner/slotInput";
 import { checkPdf } from "@/lib/reports/pdf";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -89,9 +90,10 @@ export async function markAttended(_prev: PartnerState, form: FormData) {
 export async function addSlot(_prev: PartnerState, form: FormData): Promise<PartnerState> {
   const user = await requireRole("lab", "centre");
   refreshPage();
-  // The picker gives a local time without a zone; clinics are in India, so read it as IST.
-  const when = new Date(`${String(form.get("startsAt") ?? "")}+05:30`);
-  if (!user.partnerId || Number.isNaN(when.getTime())) return { error: "Choose a date and time." };
+  // Date, hour, minute and AM/PM come as separate fields; clinics are in India, so they are read as IST.
+  const field = (name: string) => String(form.get(name) ?? "");
+  const when = parseSlotInput(field("date"), field("hour"), field("minute"), field("period"));
+  if (!user.partnerId || !when) return { error: "Choose a date and time." };
   if (when.getTime() < Date.now()) return { error: "Choose a time in the future." };
 
   const supabase = await createClient();

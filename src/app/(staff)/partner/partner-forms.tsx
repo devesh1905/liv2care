@@ -3,7 +3,7 @@
 import { CalendarPlus, Check, Trash2, Upload, X } from "lucide-react";
 import { useActionState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, FormMessage, Input } from "@/components/ui/field";
+import { Field, FormMessage, Input, Select } from "@/components/ui/field";
 import { addSlot, markAttended, markMissed, removeSlot, uploadReport, type PartnerState } from "./actions";
 
 type Action = (prev: PartnerState, form: FormData) => Promise<PartnerState>;
@@ -77,10 +77,34 @@ export function AddSlotForm() {
     return result;
   }, {});
   return (
-    <form ref={ref} action={action} className="flex flex-col gap-3">
+    <form ref={ref} action={action} className="flex flex-col gap-3" aria-label="New slot, India time">
       <div className="flex flex-wrap items-end gap-3">
-        <Field label="New slot (India time)" className="min-w-56 flex-1">
-          <Input name="startsAt" type="datetime-local" required />
+        <Field label="Date" className="min-w-40 flex-1">
+          <Input name="date" type="date" required />
+        </Field>
+        <Field label="Hour" className="w-24">
+          <Select name="hour" required defaultValue="10">
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+              <option key={h} value={h}>
+                {h}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Minute" className="w-24">
+          <Select name="minute" required defaultValue="00">
+            {["00", "15", "30", "45"].map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="AM or PM" className="w-28">
+          <Select name="period" required defaultValue="AM">
+            <option value="AM">AM</option>
+            <option value="PM">PM</option>
+          </Select>
         </Field>
         <Button type="submit" disabled={pending}>
           <CalendarPlus aria-hidden="true" />
