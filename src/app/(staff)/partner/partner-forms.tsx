@@ -37,28 +37,34 @@ function ButtonForm({
   variant,
   icon,
   children,
+  waitUntil,
 }: {
   journeyId: string;
   action: Action;
   variant?: "outline";
   icon: React.ReactNode;
   children: string;
+  /** When set, the button is greyed out and this explains when it opens (for example "in 2 days 3 h"). */
+  waitUntil?: string | null;
 }) {
   const [state, formAction, pending] = useActionState<PartnerState, FormData>(action, {});
   return (
     <form action={formAction} className="flex flex-col gap-2">
       <input type="hidden" name="journeyId" value={journeyId} />
-      <Button type="submit" variant={variant} disabled={pending} className="self-start">
-        {icon}
-        {children}
-      </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" variant={variant} disabled={pending || !!waitUntil} className="self-start">
+          {icon}
+          {children}
+        </Button>
+        {waitUntil && <span className="text-sm text-muted-foreground">Opens when the slot starts, {waitUntil}.</span>}
+      </div>
       <FormMessage error={state.error} success={state.success} />
     </form>
   );
 }
 
-export const MissedButton = ({ journeyId }: { journeyId: string }) => (
-  <ButtonForm journeyId={journeyId} action={markMissed} variant="outline" icon={<X aria-hidden="true" />}>
+export const MissedButton = ({ journeyId, waitUntil }: { journeyId: string; waitUntil?: string | null }) => (
+  <ButtonForm journeyId={journeyId} action={markMissed} variant="outline" icon={<X aria-hidden="true" />} waitUntil={waitUntil}>
     Mark missed
   </ButtonForm>
 );

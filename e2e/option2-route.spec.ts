@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { admin, signInAs } from "./helpers";
+import { admin, signInAs, startVisitNow } from "./helpers";
 
 /**
  * Option 2 end to end: the doctor orders tests, the patient books with the helper, the lab marks the visit missed,
@@ -59,6 +59,7 @@ test("Option 2: order, book, miss, reschedule, upload", async ({ browser }) => {
   expect(confirmation!.body).toContain("Sunrise Diagnostics");
 
   // 3. The lab marks the visit missed; the patient is messaged a new link
+  await startVisitNow(journey!.id);
   const lab = await signInAs(browser, "lab");
   await lab.goto("/partner");
   const visit = lab.locator("section:has(> header)").filter({ hasText: name });

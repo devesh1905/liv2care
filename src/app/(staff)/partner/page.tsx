@@ -1,4 +1,5 @@
 import { Building2, CalendarClock, CircleCheck, FlaskConical } from "lucide-react";
+import { timeUntil } from "@/lib/format/countdown";
 import { Suspense } from "react";
 import { JourneyProgress } from "@/components/journey-progress";
 import { PageHeader } from "@/components/page-header";
@@ -27,6 +28,7 @@ type Visit = {
   id: string;
   journey_id: string;
   slot_label: string | null;
+  slots: { starts_at: string } | null;
   journeys: { stage: number; missed: boolean; patients: { code: string; name: string } | null } | null;
 };
 
@@ -35,13 +37,15 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
   const raw = (await searchParams).notice;
   const notice = NOTICES[Array.isArray(raw) ? raw[0] : (raw ?? "")];
   const supabase = await createClient();
-  const nowIso = new Date().toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const nowMs = now.getTime();
 
   const [{ data: partner }, { data: visits }, { data: slots }] = await Promise.all([
     supabase.from("partners").select("name, area").eq("id", user.partnerId!).maybeSingle(),
     supabase
       .from("bookings")
-      .select("id, journey_id, slot_label, journeys(stage, missed, patients(code, name))")
+      .select("id, journey_id, slot_label, slots(starts_at), journeys(stage, missed, patients(code, name))")
       .in("status", ["booked", "missed"])
       .order("created_at"),
     supabase.from("slots").select("id, starts_at, taken").eq("partner_id", user.partnerId!).gte("starts_at", nowIso).order("starts_at"),
@@ -111,7 +115,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
                 {actions.uploadReport && <UploadForm journeyId={v.journey_id} label={uploadLabel} />}
                 <div className="flex flex-wrap gap-3">
                   {actions.markAttended && <AttendedButton journeyId={v.journey_id} />}
-                  {actions.markMissed && <MissedButton journeyId={v.journey_id} />}
+                  {actions.markMissed && <MissedButton journeyId={v.journey_id} waitUntil={v.slots ? timeUntil(v.slots.starts_at, nowMs) : null} />}
                 </div>
               </Card>
             );

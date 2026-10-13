@@ -59,3 +59,14 @@ export const PARTNER = {
   metroEval: "00000000-0000-4000-8000-0000000000c1",
   hepatology: "00000000-0000-4000-8000-0000000000d1",
 } as const;
+
+/** Moves a journey's booked slot an hour into the past, as if the visit time had come ("Mark missed" waits for it). */
+export async function startVisitNow(journeyId: string) {
+  const { data: booking } = await admin.from("bookings").select("slot_id").eq("journey_id", journeyId).eq("status", "booked").single();
+  expect(booking?.slot_id).toBeTruthy();
+  const { error } = await admin
+    .from("slots")
+    .update({ starts_at: new Date(Date.now() - 3_600_000).toISOString() })
+    .eq("id", booking!.slot_id);
+  expect(error).toBeNull();
+}

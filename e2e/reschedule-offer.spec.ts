@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { addSoonSlots, admin, linkFromMessage, PARTNER, signInAs } from "./helpers";
+import { addSoonSlots, admin, linkFromMessage, PARTNER, signInAs, startVisitNow } from "./helpers";
 
 /**
  * A patient misses a lab visit. Operations asks for a suggested new time, sends it, and the patient's booking page
@@ -27,7 +27,8 @@ test("operations offers a new time to a patient who missed a visit", async ({ br
   await patientPage.getByRole("button", { name: "Confirm booking" }).click();
   await expect(patientPage.getByRole("heading", { name: "Booking confirmed" })).toBeVisible();
 
-  // the lab marks the visit missed
+  // the visit time comes, and the lab marks the visit missed
+  await startVisitNow(journeyId);
   const lab = await signInAs(browser, "lab");
   await lab.goto("/partner");
   await lab.locator("section:has(> header)").filter({ hasText: name }).getByRole("button", { name: "Mark missed" }).click();
