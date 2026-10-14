@@ -5,6 +5,7 @@ import { Logo } from "@/components/logo";
 import { loadBookingView } from "@/lib/booking/view";
 import { isLang, t, TITLE_KEY, type Lang } from "@/lib/i18n/patient";
 import { BookingPicker } from "./booking-picker";
+import { UploadForm } from "./upload-form";
 
 export const metadata = {
   title: "Book your appointment",
@@ -20,7 +21,7 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
   const pick = (await searchParams).pick;
   const view = await loadBookingView(token, typeof pick === "string" ? pick : undefined);
 
-  const lang: Lang = isLang(wanted) ? wanted : view.kind === "ready" || view.kind === "booked" ? view.language : "en";
+  const lang: Lang = isLang(wanted) ? wanted : view.kind === "ready" || view.kind === "booked" || view.kind === "upload" ? view.language : "en";
   const other: Lang = lang === "en" ? "hi" : "en";
 
   return (
@@ -54,6 +55,19 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
             <Info className="mt-0.5 size-5 shrink-0 text-info" aria-hidden="true" />
             {t(lang, "nothingToBook")}
           </p>
+        )}
+
+        {view.kind === "upload" && (
+          <>
+            <div className="flex flex-col gap-1">
+              <p className="text-lg font-semibold">
+                {t(lang, "hello")} {view.firstName}.
+              </p>
+              <h2 className="font-heading text-xl font-extrabold text-primary">{t(lang, "uploadTitle")}</h2>
+              <p className="text-muted-foreground">{t(lang, "uploadIntro")}</p>
+            </div>
+            <UploadForm token={token} lang={lang} />
+          </>
         )}
 
         {view.kind === "booked" && (

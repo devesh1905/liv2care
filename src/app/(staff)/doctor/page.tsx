@@ -114,7 +114,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">[
   const supabase = await createClient();
 
   const [{ data }, { data: work }] = await Promise.all([
-    supabase.from("journey_status").select("journey_id, patient_code, patient_name, stage, missed").order("patient_code"),
+    supabase.from("journey_status").select("journey_id, patient_code, patient_name, stage, missed, route").order("patient_code"),
     // Row-level security: only this doctor's journeys, with the reviews and reports they are allowed to read.
     supabase
       .from("journeys")

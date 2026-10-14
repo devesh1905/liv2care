@@ -12,6 +12,8 @@ export type NextStepType = "routine" | "eval" | "specialist";
 export type JourneyState = {
   stage: Stage;
   missed: boolean;
+  /** Option 1 where the patient sends the existing report: the journey waits at the first stage for their upload. */
+  awaitingReport?: boolean;
 };
 
 /** Preset reasons the doctor picks from when declining FibroScan (clinician-reviewed wording comes later). */
@@ -28,6 +30,7 @@ export type JourneyEvent =
   | { type: "MARK_MISSED" }
   | { type: "RESCHEDULE" }
   | { type: "LAB_UPLOAD" }
+  | { type: "PATIENT_UPLOAD" }
   | { type: "CLINICIAN_SUBMIT"; summaryWritten: boolean }
   | { type: "APPROVE_VCTE" }
   | { type: "DECLINE_VCTE"; reason: string }

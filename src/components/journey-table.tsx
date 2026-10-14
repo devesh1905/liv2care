@@ -1,5 +1,7 @@
-import { nextAction, statusOf } from "@/lib/journey/derived";
-import { STAGE_LABEL, type Stage } from "@/lib/journey/stages";
+import { Smartphone } from "lucide-react";
+import Link from "next/link";
+import { nextAction, stateOf, statusOf } from "@/lib/journey/derived";
+import { STAGE_LABEL } from "@/lib/journey/stages";
 import { JourneyProgress } from "./journey-progress";
 import { StatusPill } from "./status-pill";
 
@@ -9,7 +11,21 @@ export type JourneyRow = {
   patient_name: string;
   stage: number;
   missed: boolean;
+  route?: string | null;
 };
+
+function PhoneLink({ journeyId }: { journeyId: string }) {
+  return (
+    <Link
+      href={`/phone/${journeyId}`}
+      target="_blank"
+      className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+    >
+      <Smartphone className="size-4" aria-hidden="true" />
+      Patient&apos;s phone
+    </Link>
+  );
+}
 
 /**
  * Patient, stage, status and next action. Reads journey_status, which carries no clinical columns.
@@ -21,7 +37,7 @@ export function JourneyTable({ rows }: { rows: JourneyRow[] }) {
   }
 
   const view = rows.map((r) => {
-    const state = { stage: r.stage as Stage, missed: r.missed };
+    const state = stateOf(r);
     return { r, state, status: statusOf(state), next: nextAction(state) };
   });
 
@@ -42,6 +58,7 @@ export function JourneyTable({ rows }: { rows: JourneyRow[] }) {
               <p className="font-semibold">{STAGE_LABEL[state.stage]}</p>
               <p className="text-muted-foreground">{next ? `${next.who}: ${next.what}` : "Nothing pending"}</p>
             </div>
+            <PhoneLink journeyId={r.journey_id} />
           </li>
         ))}
       </ul>
@@ -70,7 +87,10 @@ export function JourneyTable({ rows }: { rows: JourneyRow[] }) {
                 <td className="px-4 py-3">
                   <StatusPill {...status} />
                 </td>
-                <td className="px-4 py-3 text-muted-foreground">{next ? `${next.who}: ${next.what}` : "Nothing pending"}</td>
+                <td className="px-4 py-3 text-muted-foreground">
+                  <p>{next ? `${next.who}: ${next.what}` : "Nothing pending"}</p>
+                  <PhoneLink journeyId={r.journey_id} />
+                </td>
               </tr>
             ))}
           </tbody>

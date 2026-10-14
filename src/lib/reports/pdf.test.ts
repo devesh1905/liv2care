@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_REPORT_BYTES, checkPdf, safeFileName } from "./pdf";
+import { MAX_REPORT_BYTES, checkPdf, normaliseReport, safeFileName } from "./pdf";
 
 const pdf = (extra = 10) => new Uint8Array([...new TextEncoder().encode("%PDF-1.4"), ...new Array(extra).fill(0)]);
 
@@ -20,5 +20,29 @@ describe("safeFileName", () => {
     expect(safeFileName("../../etc/passwd")).toBe("passwd.pdf");
     expect(safeFileName("C:\\x\\.hidden name.pdf")).toBe("hidden_name.pdf");
     expect(safeFileName("")).toBe("report.pdf");
+  });
+});
+
+describe("normaliseReport", () => {
+  // a 1x1 PNG
+  const png = Uint8Array.from(Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==", "base64"));
+
+  it("passes a PDF through unchanged", async () => {
+    const r = await normaliseReport(pdf(), "Lab Report.PDF");
+    expect(r).toMatchObject({ ok: true, safeName: "Lab_Report.pdf" });
+    if (r.ok) expect(r.bytes).toEqual(pdf());
+  });
+
+  it("turns a photo into a one-page PDF", async () => {
+    const r = await normaliseReport(png, "photo.png");
+    expect(r).toMatchObject({ ok: true, safeName: "photo.pdf" });
+    if (r.ok) expect(String.fromCharCode(...r.bytes.slice(0, 5))).toBe("%PDF-");
+  });
+
+  it("refuses other files, empty files and very large files", async () => {
+    expect(await normaliseReport(new TextEncoder().encode("<html>"), "a.html")).toMatchObject({ ok: false });
+    expect(await normaliseReport(new Uint8Array(), "a.pdf")).toMatchObject({ ok: false });
+    expect(await normaliseReport(new Uint8Array(MAX_REPORT_BYTES + 1), "a.png")).toMatchObject({ ok: false });
+    expect(await normaliseReport(Uint8Array.from([0xff, 0xd8, 0xff, 0x00]), "broken.jpg")).toMatchObject({ ok: false });
   });
 });

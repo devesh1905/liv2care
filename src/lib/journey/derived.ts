@@ -1,5 +1,12 @@
 import { STAGE } from "./stages";
+import type { Stage } from "./stages";
 import type { JourneyState, NextStepType } from "./types";
+
+/** The state of a journey from a database row. A journey on the existing-report route that is still at the first stage is waiting for the patient's report. */
+export function stateOf(row: { stage: number; missed: boolean; route?: string | null }): JourneyState {
+  const awaitingReport = row.route === "existing_report" && row.stage === STAGE.ORDERED;
+  return { stage: row.stage as Stage, missed: row.missed, ...(awaitingReport ? { awaitingReport } : {}) };
+}
 
 export type StatusTone = "ok" | "warn" | "info" | "bad";
 export type Status = { label: string; tone: StatusTone };
@@ -45,8 +52,9 @@ const NEXT_BY_STAGE: Record<number, NextAction | null> = {
 };
 
 /** Who has to act next (prototype nextRaw). A missed visit sends the ball back to the patient. */
-export function nextAction({ stage, missed }: JourneyState): NextAction | null {
+export function nextAction({ stage, missed, awaitingReport }: JourneyState): NextAction | null {
   if (missed) return { who: "Patient", what: "Reschedule the missed appointment" };
+  if (awaitingReport && stage === STAGE.ORDERED) return { who: "Patient", what: "Upload the existing lab report" };
   return NEXT_BY_STAGE[stage] ?? null;
 }
 

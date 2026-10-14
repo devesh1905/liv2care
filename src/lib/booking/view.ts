@@ -8,6 +8,7 @@ import { loadSlotOptions } from "./options";
 export type BookingView =
   | { kind: "invalid" }
   | { kind: "nothing" }
+  | { kind: "upload"; language: Lang; firstName: string }
   | { kind: "booked"; language: Lang; partnerName: string; slotLabel: string }
   | { kind: "ready"; language: Lang; firstName: string; partnerKind: PartnerKind; reschedule: boolean; options: SlotOption[]; suggestedSlotId?: string };
 
@@ -16,6 +17,8 @@ export async function loadBookingView(token: string, pick?: string): Promise<Boo
   const admin = createAdminClient();
   const ctx = await loadBookingContext(admin, token);
   if (!ctx) return { kind: "invalid" };
+
+  if (ctx.state.awaitingReport) return { kind: "upload", language: ctx.patient.language, firstName: ctx.patient.firstName };
 
   if (!ctx.bookable) {
     const { data } = await admin

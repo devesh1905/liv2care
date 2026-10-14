@@ -131,6 +131,29 @@ describe("the scheduled reminder job", () => {
   });
 });
 
+describe("the patient sends the existing report", () => {
+  const waiting = { stage: STAGE.ORDERED, missed: false, awaitingReport: true } as const;
+
+  it("the patient's upload moves a waiting journey to the clinician's queue", () => {
+    expect(decide(waiting, { type: "PATIENT_UPLOAD" }, actor("patient"))).toMatchObject({ ok: true, next: { stage: STAGE.REPORT_IN } });
+  });
+
+  it("only the patient can upload this way, and only when a report was asked for", () => {
+    expect(decide(waiting, { type: "PATIENT_UPLOAD" }, actor("lab"))).toMatchObject({ ok: false, error: { code: "wrong_role" } });
+    expect(decide(at(STAGE.ORDERED), { type: "PATIENT_UPLOAD" }, actor("patient"))).toMatchObject({ ok: false, error: { code: "wrong_stage" } });
+    expect(decide(at(STAGE.REPORT_IN), { type: "PATIENT_UPLOAD" }, actor("patient"))).toMatchObject({ ok: false, error: { code: "wrong_stage" } });
+  });
+
+  it("a waiting journey cannot be booked", () => {
+    expect(decide(waiting, { type: "BOOK" }, actor("patient"))).toMatchObject({ ok: false, error: { code: "wrong_stage" } });
+  });
+
+  it("the doctor starts it with no file and the journey waits", () => {
+    expect(decideStart("existing_report", actor("doctor"), false)).toMatchObject({ ok: true, next: { stage: STAGE.ORDERED, awaitingReport: true } });
+    expect(decideStart("existing_report", actor("doctor"), true)).toMatchObject({ ok: true, next: { stage: STAGE.REPORT_IN } });
+  });
+});
+
 describe("starting a journey", () => {
   it("the doctor picks Option 1 (existing report) or Option 2 (order tests)", () => {
     expect(decideStart("existing_report", actor("doctor"))).toMatchObject({ ok: true, next: { stage: STAGE.REPORT_IN } });

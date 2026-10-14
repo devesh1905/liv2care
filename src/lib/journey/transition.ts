@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { nextAction, type PartnerKind } from "./derived";
+import { nextAction, stateOf, type PartnerKind } from "./derived";
 import { decide } from "./stateMachine";
 import type { Stage } from "./stages";
 import type { Actor, JourneyEvent, JourneyState, NextStepType, TransitionError } from "./types";
@@ -78,7 +78,7 @@ export type TransitionResult =
   | { ok: true; stage: Stage; missed: boolean; eventId: number }
   | { ok: false; error: TransitionError | { code: "not_found" | "stale" | "invalid_detail" | "invalid_payload"; message: string } };
 
-const REPORT_KIND_FOR: Record<string, ReportEffect["kind"]> = { LAB_UPLOAD: "lab", CENTRE_UPLOAD: "fibroscan" };
+const REPORT_KIND_FOR: Record<string, ReportEffect["kind"]> = { LAB_UPLOAD: "lab", PATIENT_UPLOAD: "lab", CENTRE_UPLOAD: "fibroscan" };
 const DECISION_KIND_FOR: Record<string, DecisionEffect["kind"]> = {
   APPROVE_VCTE: "vcte_approve",
   DECLINE_VCTE: "vcte_decline",
@@ -170,9 +170,9 @@ export async function transition(
 export function supabaseJourneyStore(admin: SupabaseClient): JourneyStore {
   return {
     async get(journeyId) {
-      const { data, error } = await admin.from("journeys").select("stage, missed").eq("id", journeyId).maybeSingle();
+      const { data, error } = await admin.from("journeys").select("stage, missed, route").eq("id", journeyId).maybeSingle();
       if (error) throw error;
-      return data ? { stage: data.stage as Stage, missed: data.missed as boolean } : null;
+      return data ? stateOf(data) : null;
     },
     async apply(req) {
       const { data, error } = await admin.rpc("apply_journey_event", {

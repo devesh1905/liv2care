@@ -12,7 +12,7 @@ export type StartInput = {
   route: StartRoute;
   ultrasound: boolean;
   consentScope: string;
-  /** Option 1: the uploaded existing lab report (already in private storage). */
+  /** Option 1: the uploaded existing lab report (already in private storage). Left out when the patient will send it. */
   report?: { storagePath: string; fileName: string; labValues?: Record<string, number> };
 };
 
@@ -22,11 +22,8 @@ export type StartResult =
 
 /** Starts a journey (patient, consent, first audit row, first pending action) in one database call. */
 export async function startJourney(admin: SupabaseClient, actor: Actor, input: StartInput): Promise<StartResult> {
-  const decision = decideStart(input.route, actor);
+  const decision = decideStart(input.route, actor, !!input.report);
   if (!decision.ok) return decision;
-  if (input.route === "existing_report" && !input.report) {
-    return { ok: false, error: { code: "invalid_payload", message: "Upload the existing lab report first" } };
-  }
   if (input.route === "order_tests" && input.report) {
     return { ok: false, error: { code: "invalid_payload", message: "A new test order does not take a report" } };
   }

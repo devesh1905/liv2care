@@ -1,4 +1,5 @@
 import { ArrowRight, CalendarCheck, ClipboardList, FileCheck2, MessageSquareText, ShieldCheck, Stethoscope } from "lucide-react";
+import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 
@@ -24,7 +25,7 @@ export default function Home() {
         <Logo />
         <div className="flex items-center gap-2">
           {demo && (
-            <Button render={<a href="/demo" />} variant="ghost" size="sm">
+            <Button render={<Link href="/demo" />} variant="ghost" size="sm">
               Demo access
             </Button>
           )}
@@ -53,7 +54,7 @@ export default function Home() {
                 <ArrowRight aria-hidden="true" />
               </Button>
               {demo ? (
-                <Button render={<a href="/demo" />} variant="outline" size="lg">
+                <Button render={<Link href="/demo" />} variant="outline" size="lg">
                   Try the demo
                 </Button>
               ) : (

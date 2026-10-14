@@ -7,6 +7,8 @@ import type { NextStepType } from "@/lib/journey/types";
 import { suggest, type SuggestDeps } from "@/lib/logistics/suggest";
 import type { Preference } from "@/lib/logistics/types";
 import type { Lang } from "@/lib/i18n/patient";
+import { aiDeps } from "./aiLimits";
+import { hashToken } from "./links";
 import { sendBookingLink } from "./notify";
 import { loadSlotOptions } from "./options";
 
@@ -83,4 +85,37 @@ export async function sendRescheduleOffer(
     p_detail: { partner: partner.name, slot: slotLabel },
   });
   return { ok: true, place: partner.name, slotLabel };
+}
+
+/**
+ * Runs the moment a visit is marked missed. The patient is sent a suggested new time at once (the earliest open slot at
+ * the same kind of place; code picks it and the AI helper only phrases the reason), with a link that opens with that time
+ * selected. Nothing is booked until the patient confirms. If no time is open, or anything goes wrong, the patient gets the
+ * plain "choose a new time" link instead, so a missed visit is never left without a message.
+ */
+export async function notifyMissed(
+  admin: SupabaseClient,
+  journeyId: string,
+  actor: { id: string | null; role: string },
+): Promise<"offer" | "link"> {
+  try {
+    const { data: row } = await admin.from("journeys").select("stage, missed, next_step, patients(language)").eq("id", journeyId).maybeSingle();
+    if (row?.missed) {
+      const patient = row.patients as unknown as { language?: string } | null;
+      const offer = await suggestForMissed(
+        admin,
+        {
+          stage: row.stage as Stage,
+          nextStep: (row.next_step as NextStepType | null) ?? null,
+          language: patient?.language === "hi" ? "hi" : "en",
+        },
+        await aiDeps(admin, hashToken(`missed:${journeyId}`).slice(0, 16)),
+      );
+      if (offer && (await sendRescheduleOffer(admin, journeyId, offer.slotId, actor)).ok) return "offer";
+    }
+  } catch {
+    // fall through to the plain link
+  }
+  await sendBookingLink(admin, journeyId, (url, m) => m.missed(url), "SMS");
+  return "link";
 }

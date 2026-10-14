@@ -46,6 +46,7 @@ function RouteOption({
 
 export function EnrolForm() {
   const [route, setRoute] = useState<Route>("order_tests");
+  const [patientUploads, setPatientUploads] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState<EnrolState, FormData>(async (prev, data) => {
     const result = await enrolPatient(prev, data);
@@ -101,7 +102,7 @@ export function EnrolForm() {
               onSelect={() => setRoute("existing_report")}
               icon={<FileUp className="size-5" />}
               title="Option 1: use an existing report"
-              text="Upload a lab report the patient already has. No repeat lab test."
+              text="Attach a lab report the patient already has, or ask them to send it. No repeat lab test."
             />
           </div>
         </fieldset>
@@ -109,15 +110,22 @@ export function EnrolForm() {
         {route === "order_tests" ? (
           <CheckRow name="ultrasound">Also order an ultrasound</CheckRow>
         ) : (
-          <Field label="Existing lab report" hint="PDF, up to 5 MB">
-            <input
-              name="report"
-              type="file"
-              accept="application/pdf"
-              required
-              className="text-sm file:mr-3 file:h-10 file:rounded-lg file:border file:bg-card file:px-4 file:font-heading file:font-semibold"
-            />
-          </Field>
+          <div className="flex flex-col gap-3">
+            <CheckRow name="patientUploads" checked={patientUploads} onChange={(e) => setPatientUploads(e.target.checked)}>
+              The patient will upload the report. Send them a private link to do it from their phone.
+            </CheckRow>
+            {!patientUploads && (
+              <Field label="Existing lab report" hint="A PDF or a photo (JPEG or PNG), up to 5 MB">
+                <input
+                  name="report"
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png"
+                  required
+                  className="text-sm file:mr-3 file:h-10 file:rounded-lg file:border file:bg-card file:px-4 file:font-heading file:font-semibold"
+                />
+              </Field>
+            )}
+          </div>
         )}
 
         <CheckRow name="consent" required className="rounded-xl bg-secondary/60 p-4 font-semibold">
@@ -125,6 +133,14 @@ export function EnrolForm() {
         </CheckRow>
 
         <FormMessage error={state.error} success={state.success} />
+        {state.phoneLink && (
+          <p className="text-sm">
+            <a href={state.phoneLink} target="_blank" rel="noopener" className="font-semibold text-primary underline underline-offset-4">
+              Open the patient&apos;s phone
+            </a>{" "}
+            <span className="text-muted-foreground">to see the messages and pages the patient would see (simulated).</span>
+          </p>
+        )}
         {state.patientLink && (
           <p className="text-sm">
             <a href={state.patientLink} target="_blank" rel="noopener" className="font-semibold text-primary underline underline-offset-4">

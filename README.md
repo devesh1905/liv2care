@@ -10,7 +10,7 @@ The software and the AI never diagnose, calculate FIB-4 or any score, or make cl
 
 | Who | Where | What they can do |
 |---|---|---|
-| Treating doctor | `/doctor` | Enrol a patient with consent (Option 1: upload an existing lab report, Option 2: order the preset tests). Approve or decline FibroScan (preset reasons), ask for a re-review, pick the next step (routine follow-up, further evaluation, specialist referral), mark follow-up visits attended. |
+| Treating doctor | `/doctor` | Enrol a patient with consent (Option 1: attach an existing lab report as a PDF or photo, or ask the patient to upload it from a private link; Option 2: order the preset tests). Every patient row has a **Patient's phone** link: a simulated phone showing their messages and the pages they open. Approve or decline FibroScan (preset reasons), ask for a re-review, pick the next step (routine follow-up, further evaluation, specialist referral), mark follow-up visits attended. |
 | Telemedicine clinician | `/clinician` | Open the original report through a signed link, type FIB-4 and the summary by hand, send both to the doctor. |
 | Lab and diagnostic centre | `/partner` | Manage slots, upload reports, mark visits missed or attended. |
 | Patient | `/book/[token]`, `/patient/[token]` | Book a lab, centre or follow-up from a link (English or Hindi, with a booking helper), reschedule after a miss, and see their progress. No account or app. |

@@ -1,7 +1,6 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { kindFor, type PartnerKind } from "@/lib/journey/derived";
-import type { Stage } from "@/lib/journey/stages";
+import { kindFor, stateOf, type PartnerKind } from "@/lib/journey/derived";
 import { decide } from "@/lib/journey/stateMachine";
 import { supabaseJourneyStore, transition } from "@/lib/journey/transition";
 import type { JourneyEvent, JourneyState, NextStepType } from "@/lib/journey/types";
@@ -30,14 +29,14 @@ export async function loadBookingContext(admin: SupabaseClient, token: string): 
 
   const { data, error } = await admin
     .from("journeys")
-    .select("stage, missed, next_step, patients(code, name, language)")
+    .select("stage, missed, route, next_step, patients(code, name, language)")
     .eq("id", journeyId)
     .maybeSingle();
   if (error) throw error;
   const patient = data?.patients as unknown as { code: string; name: string; language: string } | null;
   if (!data || !patient) return null;
 
-  const state: JourneyState = { stage: data.stage as Stage, missed: data.missed };
+  const state: JourneyState = stateOf(data);
   const event = state.missed ? "RESCHEDULE" : "BOOK";
   return {
     journeyId,

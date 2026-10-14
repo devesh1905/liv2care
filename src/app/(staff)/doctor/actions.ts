@@ -8,11 +8,11 @@ import { issueProgressLink } from "@/lib/booking/links";
 import { sendBookingLink } from "@/lib/booking/notify";
 import { mockProvider } from "@/lib/messages/provider";
 import { templatesFor } from "@/lib/messages/templates";
-import { checkPdf } from "@/lib/reports/pdf";
+import { normaliseReport } from "@/lib/reports/pdf";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export type EnrolState = { error?: string; success?: string; patientLink?: string };
+export type EnrolState = { error?: string; success?: string; patientLink?: string; phoneLink?: string };
 
 const CONSENT_SCOPE = "Liver-risk assessment pathway and sharing reports with the platform clinician";
 
@@ -38,17 +38,18 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
   const admin = createAdminClient();
   const journeyId = randomUUID();
 
+  // Option 1: the doctor attaches the report now (a PDF, or a photo that is turned into a PDF), or asks the patient to send it.
+  const patientSends = route === "existing_report" && form.get("patientUploads") === "on";
   let report: { storagePath: string; fileName: string } | undefined;
-  if (route === "existing_report") {
+  if (route === "existing_report" && !patientSends) {
     const file = form.get("report");
-    if (!(file instanceof File) || file.size === 0) return { error: "Upload the existing lab report (PDF)." };
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const checked = checkPdf(bytes, file.name);
+    if (!(file instanceof File) || file.size === 0) return { error: "Attach the existing lab report, or ask the patient to upload it." };
+    const checked = await normaliseReport(new Uint8Array(await file.arrayBuffer()), file.name);
     if (!checked.ok) return { error: checked.message };
 
     // Uploaded as the doctor, so the storage policy decides whether it is allowed.
     const storagePath = `intake/${doctor.id}/${randomUUID()}.pdf`;
-    const { error } = await supabase.storage.from("reports").upload(storagePath, bytes, { contentType: "application/pdf" });
+    const { error } = await supabase.storage.from("reports").upload(storagePath, checked.bytes, { contentType: "application/pdf" });
     if (error) return { error: "The report could not be uploaded. Try again." };
     report = { storagePath, fileName: checked.safeName };
   }
@@ -79,7 +80,9 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
   try {
     // The first message also carries the patient's progress page, which stays valid for weeks.
     const progress = await issueProgressLink(admin, journeyId);
-    if (route === "existing_report") {
+    if (patientSends) {
+      demoLink = await sendBookingLink(admin, journeyId, (url, m) => m.uploadRequest(url, progress));
+    } else if (route === "existing_report") {
       await mockProvider(admin).send({ journeyId, channel: "WhatsApp", body: templatesFor(language).existingReportUsed(progress) });
       demoLink = progress; // nothing for the patient to book yet, so the demo link shows their progress
     } else {
@@ -91,10 +94,13 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
 
   return {
     success:
-      route === "existing_report"
+      patientSends
+        ? `${name} (${code}) enrolled. A link to upload their report was sent by WhatsApp (simulated).`
+        : route === "existing_report"
         ? `${name} (${code}) enrolled. The existing report is with the clinician; no repeat test needed.`
         : `${name} (${code}) enrolled. A booking link was sent by WhatsApp (simulated).`,
     // In a demo, the message is pretend, so show the link the patient would have tapped. Never shown on a real deployment.
     patientLink: process.env.DEMO_LOGINS === "on" ? demoLink : undefined,
+    phoneLink: `/phone/${journeyId}`,
   };
 }

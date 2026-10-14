@@ -1,5 +1,6 @@
 import "server-only";
 import type { Lang } from "@/lib/i18n/patient";
+import { stateOf } from "@/lib/journey/derived";
 import type { Stage } from "@/lib/journey/stages";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveBookingLink } from "./links";
@@ -12,6 +13,8 @@ export type TimelineView =
       firstName: string;
       stage: Stage;
       missed: boolean;
+      /** The patient has been asked to send an existing lab report. */
+      awaitingReport: boolean;
       /** The upcoming appointment, if one is booked. Place and time only. */
       appointment: { place: string; slot: string } | null;
     };
@@ -26,7 +29,7 @@ export async function loadTimelineView(token: string): Promise<TimelineView> {
   if (!journeyId) return { kind: "invalid" };
 
   const [{ data: journey }, { data: booking }] = await Promise.all([
-    admin.from("journeys").select("stage, missed, patients(name, language)").eq("id", journeyId).maybeSingle(),
+    admin.from("journeys").select("stage, missed, route, patients(name, language)").eq("id", journeyId).maybeSingle(),
     admin
       .from("bookings")
       .select("slot_label, partners(name)")
@@ -46,6 +49,7 @@ export async function loadTimelineView(token: string): Promise<TimelineView> {
     firstName: patient.name.split(" ")[0],
     stage: journey.stage as Stage,
     missed: journey.missed,
+    awaitingReport: stateOf(journey).awaitingReport === true,
     appointment: booking && partner ? { place: partner.name, slot: booking.slot_label ?? "" } : null,
   };
 }

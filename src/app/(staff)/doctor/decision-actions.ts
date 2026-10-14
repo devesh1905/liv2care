@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/session";
 import { sendBookingLink } from "@/lib/booking/notify";
+import { notifyMissed } from "@/lib/booking/reschedule";
 import { transitionJourney } from "@/lib/journey/server";
 import type { Effects } from "@/lib/journey/transition";
 import { DECLINE_REASONS, type JourneyEvent, type NextStepType } from "@/lib/journey/types";
@@ -107,6 +108,6 @@ export async function recordFollowUp(_prev: DecisionState, form: FormData): Prom
 
   const result = await run(ctx.journeyId, ctx.doctor.id, { type: outcome === "attended" ? "MARK_ATTENDED" : "MARK_MISSED" }, {}, {});
   if (!result.ok) return { error: result.error.message };
-  if (outcome === "missed") await sendBookingLink(createAdminClient(), ctx.journeyId, (url, m) => m.missed(url), "SMS");
+  if (outcome === "missed") await notifyMissed(createAdminClient(), ctx.journeyId, { id: ctx.doctor.id, role: "doctor" });
   redirect(`/doctor?notice=${outcome === "attended" ? "attended" : "missed"}`);
 }

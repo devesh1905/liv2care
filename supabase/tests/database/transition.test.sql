@@ -50,10 +50,10 @@ select is(
   (select stage from public.journeys j join public.patients p on p.id = j.patient_id where p.code = 'P-9001'), 2::smallint,
   'an existing-report journey starts at report received');
 
-select throws_ok(
+select lives_ok(
   $$select public.start_journey(gen_random_uuid(), 'P-9002', 'Test Person', 40::smallint, '98•••• 0000', 'en', 'existing_report', false,
       '00000000-0000-4000-8000-000000000001', 'Pathway and report sharing')$$,
-  '23514', null, 'the existing-report route needs a report');
+  'the existing-report route can wait for the patient to send the report');
 
 select * from finish();
 rollback;

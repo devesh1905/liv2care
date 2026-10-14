@@ -4,9 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/session";
 import { sendBookingLink } from "@/lib/booking/notify";
-import { nextAction } from "@/lib/journey/derived";
+import { notifyMissed } from "@/lib/booking/reschedule";
+import { nextAction, stateOf } from "@/lib/journey/derived";
 import { transitionJourney } from "@/lib/journey/server";
-import type { Stage } from "@/lib/journey/stages";
 import { sendOverdueReminders } from "@/lib/ops/reminders";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -23,9 +23,9 @@ async function begin(form: FormData) {
   if (!UUID.test(journeyId)) return { error: "Unknown patient." } as const;
   const supabase = await createClient();
   // Operations reads journey_status, never the journeys table.
-  const { data } = await supabase.from("journey_status").select("stage, missed").eq("journey_id", journeyId).maybeSingle();
+  const { data } = await supabase.from("journey_status").select("stage, missed, route").eq("journey_id", journeyId).maybeSingle();
   if (!data) return { error: "That patient is not on the list." } as const;
-  return { user, journeyId, state: { stage: data.stage as Stage, missed: data.missed as boolean } } as const;
+  return { user, journeyId, state: stateOf(data) } as const;
 }
 
 /** Sends the patient a reminder with a fresh booking link, and restarts the clock on the pending action. */
@@ -46,7 +46,7 @@ export async function markVisitMissed(_prev: OpsState, form: FormData): Promise<
   if ("error" in ctx) return ctx;
   const result = await transitionJourney(ctx.journeyId, { type: "MARK_MISSED" }, { id: ctx.user.id, role: "ops" });
   if (!result.ok) return { error: result.error.message };
-  await sendBookingLink(createAdminClient(), ctx.journeyId, (url, m) => m.missed(url), "SMS");
+  await notifyMissed(createAdminClient(), ctx.journeyId, { id: ctx.user.id, role: "ops" });
   redirect("/ops?notice=missed");
 }
 
