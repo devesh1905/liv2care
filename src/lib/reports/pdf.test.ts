@@ -33,7 +33,8 @@ describe("normaliseReport", () => {
     if (r.ok) expect(r.bytes).toEqual(pdf());
   });
 
-  it("turns a photo into a one-page PDF", async () => {
+  // the first call loads the PDF library, which can take a few seconds on a busy machine
+  it("turns a photo into a one-page PDF", { timeout: 30_000 }, async () => {
     const r = await normaliseReport(png, "photo.png");
     expect(r).toMatchObject({ ok: true, safeName: "photo.pdf" });
     if (r.ok) expect(String.fromCharCode(...r.bytes.slice(0, 5))).toBe("%PDF-");
