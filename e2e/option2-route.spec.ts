@@ -91,5 +91,5 @@ test("Option 2: order, book, miss, reschedule, upload", async ({ browser }) => {
   const { data: done } = await admin.from("journeys").select("stage").eq("id", journey!.id).single();
   expect(done!.stage).toBe(2);
   const { data: all } = await admin.from("journey_events").select("event").eq("journey_id", journey!.id).order("id");
-  expect(all!.map((e) => e.event)).toEqual(["JOURNEY_STARTED", "BOOK", "MARK_MISSED", "RESCHEDULE", "LAB_UPLOAD"]);
+  expect(all!.map((e) => e.event)).toEqual(["JOURNEY_STARTED", "BOOK", "MARK_MISSED", "RESCHEDULE_OFFER_SENT", "RESCHEDULE", "LAB_UPLOAD"]);
 });

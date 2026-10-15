@@ -41,6 +41,7 @@ test("the right password signs in as that role and lands on its own page", async
 });
 
 test("an unknown role is not found", async ({ page }) => {
-  const res = await page.goto("/demo/not-a-role");
-  expect(res?.status()).toBe(404);
+  await page.goto("/demo/not-a-role");
+  // the page streams, so the status line is already 200; the visitor sees the not-found page
+  await expect(page.getByRole("heading", { name: "We could not find that page" })).toBeVisible();
 });
