@@ -2,6 +2,7 @@ import "server-only";
 import type { Lang } from "@/lib/i18n/patient";
 import type { PartnerKind, SlotOption } from "@/lib/logistics/types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { STAGE } from "@/lib/journey/stages";
 import { loadBookingContext } from "./book";
 import { loadSlotOptions } from "./options";
 
@@ -9,6 +10,7 @@ export type BookingView =
   | { kind: "invalid" }
   | { kind: "nothing" }
   | { kind: "upload"; language: Lang; firstName: string }
+  | { kind: "uploaded"; language: Lang; firstName: string }
   | { kind: "booked"; language: Lang; partnerName: string; slotLabel: string }
   | { kind: "ready"; language: Lang; firstName: string; partnerKind: PartnerKind; reschedule: boolean; options: SlotOption[]; suggestedSlotId?: string };
 
@@ -32,7 +34,9 @@ export async function loadBookingView(token: string, pick?: string): Promise<Boo
     const partner = data?.partners as unknown as { name: string } | null;
     return data && partner
       ? { kind: "booked", language: ctx.patient.language, partnerName: partner.name, slotLabel: data.slot_label ?? "" }
-      : { kind: "nothing" };
+      : ctx.route === "existing_report" && ctx.state.stage >= STAGE.REPORT_IN
+        ? { kind: "uploaded", language: ctx.patient.language, firstName: ctx.patient.firstName }
+        : { kind: "nothing" };
   }
 
   const options = await loadSlotOptions(admin, ctx.kind);

@@ -11,7 +11,8 @@ test("the home page speaks to doctors and patients and has no role buttons", asy
   await expect(page.getByRole("heading", { name: "For doctors and care teams" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "For patients" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Treating doctor/ })).toHaveCount(0);
-  await page.getByRole("link", { name: "Demo access" }).click();
+  // the button styles on a link are announced as buttons, like the other header buttons
+  await page.getByRole("button", { name: "Demo access" }).click();
   await page.waitForURL("**/demo");
 });
 
@@ -28,7 +29,7 @@ test("every person has a link, and each opens their own sign-in page", async ({ 
 
   await page.getByLabel("Password").fill("not-the-password");
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByRole("alert")).toContainText("Wrong email or password");
+  await expect(page.getByRole("alert").filter({ hasText: "Wrong email or password" })).toBeVisible();
 });
 
 test("the right password signs in as that role and lands on its own page", async ({ page }) => {

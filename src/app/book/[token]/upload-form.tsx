@@ -1,24 +1,19 @@
 "use client";
 
-import { CircleCheck, FileUp } from "lucide-react";
+import { FileUp } from "lucide-react";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
 import { FormMessage } from "@/components/ui/field";
 import { t, type Lang } from "@/lib/i18n/patient";
 import { sendReport, type UploadState } from "./actions";
+import { UploadDone } from "./upload-done";
 
 /** The patient sends their existing lab report, as a PDF or a photo, from their phone. */
 export function UploadForm({ token, lang }: { token: string; lang: Lang }) {
   const [state, action, pending] = useActionState<UploadState, FormData>(sendReport, {});
 
   if (state.done) {
-    return (
-      <section className="flex flex-col gap-3 rounded-2xl border border-ok/30 bg-ok-soft p-5">
-        <CircleCheck className="size-8 text-ok" aria-hidden="true" />
-        <h2 className="font-heading text-xl font-extrabold text-ok">{t(lang, "uploadDoneTitle")}</h2>
-        <p>{t(lang, "uploadDoneText")}</p>
-      </section>
-    );
+    return <UploadDone lang={lang} />;
   }
 
   return (

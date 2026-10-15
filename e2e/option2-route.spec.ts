@@ -79,7 +79,7 @@ test("Option 2: order, book, miss, reschedule, upload", async ({ browser }) => {
   const { data: bookings } = await admin.from("bookings").select("status").eq("journey_id", journey!.id).order("created_at");
   expect(bookings!.map((b) => b.status)).toEqual(["cancelled", "booked"]);
   const { data: events } = await admin.from("journey_events").select("event").eq("journey_id", journey!.id).order("id");
-  expect(events!.map((e) => e.event)).toEqual(["JOURNEY_STARTED", "BOOK", "MARK_MISSED", "RESCHEDULE"]);
+  expect(events!.map((e) => e.event)).toEqual(["JOURNEY_STARTED", "BOOK", "MARK_MISSED", "RESCHEDULE_OFFER_SENT", "RESCHEDULE"]);
 
   // 5. The lab uploads the report: the journey reaches "report received"
   await lab.goto("/partner");

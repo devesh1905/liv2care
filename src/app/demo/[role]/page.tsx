@@ -1,22 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
+import { Suspense } from "react";
 import { LoginForm } from "@/app/login/login-form";
 import { Logo } from "@/components/logo";
 import { ROLE_BLURB, ROLE_ICON } from "@/components/demo-roles";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { isStaffRole, ROLE_LABEL, STAFF_ROLES } from "@/lib/auth/roles";
+import { isStaffRole, ROLE_LABEL } from "@/lib/auth/roles";
 
-export function generateStaticParams() {
-  return STAFF_ROLES.map((role) => ({ role }));
-}
-
-export async function generateMetadata({ params }: PageProps<"/demo/[role]">) {
-  const { role } = await params;
-  return { title: isStaffRole(role) ? `Demo: ${ROLE_LABEL[role]}` : "Demo access" };
-}
+export const metadata = { title: "Demo sign-in", robots: { index: false, follow: false } };
 
 /** One person's own sign-in page for the demo. The email is fixed to that role's demo account; the visitor types the password. */
-export default async function DemoRolePage({ params }: PageProps<"/demo/[role]">) {
+async function Content({ params }: Pick<PageProps<"/demo/[role]">, "params">) {
+  await connection();
   const { role } = await params;
   if (process.env.DEMO_LOGINS !== "on" || !isStaffRole(role)) notFound();
   const Icon = ROLE_ICON[role];
@@ -51,5 +47,13 @@ export default async function DemoRolePage({ params }: PageProps<"/demo/[role]">
         Back to all demo roles
       </Link>
     </main>
+  );
+}
+
+export default function Page(props: PageProps<"/demo/[role]">) {
+  return (
+    <Suspense fallback={<p role="status" className="p-8 text-muted-foreground">Loading…</p>}>
+      <Content params={props.params} />
+    </Suspense>
   );
 }

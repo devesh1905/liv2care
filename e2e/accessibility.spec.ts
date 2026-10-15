@@ -54,7 +54,9 @@ for (const [name, size] of [
       await scan(page, `demo role page ${name}`);
       await page.getByLabel("Password").fill("not-the-password");
       await page.getByRole("button", { name: "Sign in" }).click();
-      await expect(page.getByRole("alert")).toBeVisible();
+      await expect(page.getByRole("alert").filter({ hasText: "Wrong email or password" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Sign in" })).toBeEnabled();
+      await page.waitForTimeout(500); // the button fades back from its "signing in" look
       await scan(page, `demo role page with an error ${name}`);
     });
   });

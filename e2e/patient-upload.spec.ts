@@ -50,9 +50,10 @@ test("the patient uploads their existing report from the link", async ({ browser
   const { data: thanks } = await admin.from("messages").select("body").eq("journey_id", journeyId).like("body", "Thank you, we have received your report%");
   expect(thanks).toHaveLength(1);
 
-  // the link no longer asks for a report
+  // opening the link again no longer asks for a report
   await phone.reload();
   await expect(phone.getByRole("heading", { name: "Send your lab report" })).toHaveCount(0);
+  await expect(phone.getByRole("heading", { name: "Report received" })).toBeVisible();
 
   // the report is in the clinician's queue
   const clinician = await signInAs(browser, "clinician");

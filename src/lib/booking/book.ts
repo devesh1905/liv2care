@@ -15,6 +15,7 @@ const PATIENT = { id: "booking-link", role: "patient" } as const;
 export type BookingContext = {
   journeyId: string;
   state: JourneyState;
+  route: string;
   kind: PartnerKind;
   event: Extract<JourneyEvent, { type: "BOOK" | "RESCHEDULE" }>["type"];
   /** False when the journey is not waiting for the patient to book. */
@@ -41,6 +42,7 @@ export async function loadBookingContext(admin: SupabaseClient, token: string): 
   return {
     journeyId,
     state,
+    route: data.route as string,
     kind: kindFor(state, (data.next_step as NextStepType | null) ?? null),
     event,
     bookable: decide(state, { type: event }, PATIENT).ok,

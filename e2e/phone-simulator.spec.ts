@@ -9,7 +9,8 @@ test("the doctor sees the patient's phone, books from inside it, and the confirm
   const name = `Phone Person ${Date.now() % 100000}`;
   await addSoonSlots(PARTNER.sunrise);
 
-  const doctor = await signInAs(browser, "doctor");
+  // a tall window, so the whole phone is on screen
+  const doctor = await signInAs(browser, "doctor", { width: 1280, height: 1300 });
   await doctor.getByLabel("Patient name", { exact: true }).fill(name);
   await doctor.getByLabel("Age", { exact: true }).fill("47");
   await doctor.getByLabel(/has given consent/).check();
