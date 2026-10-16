@@ -12,7 +12,14 @@ import { normaliseReport } from "@/lib/reports/pdf";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-export type EnrolState = { error?: string; success?: string; patientLink?: string; phoneLink?: string };
+export type EnrolState = {
+  error?: string;
+  success?: string;
+  patientLink?: string;
+  phoneLink?: string;
+  /** What was typed when the server refused the form, so the form can show it again. */
+  typed?: { name: string; age: string; phone: string; language: string; consent: boolean };
+};
 
 const CONSENT_SCOPE = "Liver-risk assessment pathway and sharing reports with the platform clinician";
 

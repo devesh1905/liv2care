@@ -17,7 +17,8 @@ async function enrolOption2(doctor: Page, name: string): Promise<string> {
   await doctor.getByLabel("Age", { exact: true }).fill("55");
   await doctor.getByLabel(/has given consent/).check();
   await doctor.getByRole("button", { name: "Enrol patient" }).click();
-  await expect(doctor.getByRole("status").filter({ hasText: "enrolled" })).toBeVisible();
+  // the message names this patient, so an older "enrolled" message cannot satisfy the wait
+  await expect(doctor.getByRole("status").filter({ hasText: `${name} (` })).toBeVisible();
   return journeyIdOf(name);
 }
 
@@ -79,6 +80,7 @@ test.describe("sign-in and access", () => {
       await expect(doctor.getByRole("heading", { name: "We could not find that page" })).toBeVisible();
     }
     const name = unique("Phone Access");
+    await doctor.goto("/doctor");
     const journeyId = await enrolOption2(doctor, name);
     const ops = await signInAs(browser, "ops");
     await ops.goto(`/phone/${journeyId}`);
@@ -169,7 +171,7 @@ test.describe("enrolling a patient", () => {
     const name = `<img src=x onerror="window.__xss=1"> ${Date.now() % 100000}`;
     await enrolOption2(doctor, name);
     await doctor.goto("/doctor");
-    await expect(doctor.getByText(name, { exact: false }).first()).toBeVisible();
+    await expect(doctor.getByText(name, { exact: false }).locator("visible=true").first()).toBeVisible();
     expect(await doctor.evaluate(() => (window as unknown as { __xss?: number }).__xss)).toBeUndefined();
   });
 });
@@ -225,7 +227,7 @@ test.describe("private links", () => {
 
     await two.getByLabel("Your report").setInputFiles({ name: "r2.png", mimeType: "image/png", buffer: PNG });
     await two.getByRole("button", { name: "Send report" }).click();
-    await expect(two.getByRole("alert").filter({ hasText: /could not be sent/ })).toBeVisible();
+    await expect(two.getByRole("heading", { name: "Report received" })).toBeVisible(); // the page notices it is already done
     const { count } = await admin.from("reports").select("id", { count: "exact", head: true }).eq("journey_id", journeyId);
     expect(count).toBe(1);
   });

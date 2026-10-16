@@ -51,6 +51,19 @@ export function EnrolForm() {
   const [state, action, pending] = useActionState<EnrolState, FormData>(async (prev, data) => {
     const result = await enrolPatient(prev, data);
     if (result.success) formRef.current?.reset();
+    // React clears a form after it is sent. When the server refuses it, hand the typed values back so nothing is lost.
+    if (result.error) {
+      return {
+        ...result,
+        typed: {
+          name: String(data.get("name") ?? ""),
+          age: String(data.get("age") ?? ""),
+          phone: String(data.get("phone") ?? ""),
+          language: String(data.get("language") ?? "en"),
+          consent: data.get("consent") === "on",
+        },
+      };
+    }
     return result;
   }, {});
 
@@ -69,16 +82,16 @@ export function EnrolForm() {
 
         <div className="grid gap-4 sm:grid-cols-6">
           <Field label="Patient name" className="sm:col-span-3">
-            <Input name="name" required maxLength={80} autoComplete="off" />
+            <Input name="name" required maxLength={80} autoComplete="off" defaultValue={state.typed?.name} />
           </Field>
           <Field label="Age" className="sm:col-span-1">
-            <Input name="age" type="number" required min={18} max={120} inputMode="numeric" />
+            <Input name="age" type="number" required min={18} max={120} inputMode="numeric" defaultValue={state.typed?.age} />
           </Field>
           <Field label="Phone, last 4 digits" hint="Optional" className="sm:col-span-2">
-            <Input name="phone" inputMode="numeric" pattern="\d{4}" maxLength={4} autoComplete="off" />
+            <Input name="phone" inputMode="numeric" pattern="\d{4}" maxLength={4} autoComplete="off" defaultValue={state.typed?.phone} />
           </Field>
           <Field label="Message language" className="sm:col-span-3">
-            <Select name="language" defaultValue="en">
+            <Select name="language" defaultValue={state.typed?.language ?? "en"}>
               <option value="en">English</option>
               <option value="hi">Hindi</option>
             </Select>
@@ -128,7 +141,7 @@ export function EnrolForm() {
           </div>
         )}
 
-        <CheckRow name="consent" required className="rounded-xl bg-secondary/60 p-4 font-semibold">
+        <CheckRow name="consent" required defaultChecked={state.typed?.consent} className="rounded-xl bg-secondary/60 p-4 font-semibold">
           The patient has given consent to this pathway and to sharing their reports with the platform clinician.
         </CheckRow>
 

@@ -20,12 +20,14 @@ export function BookingPicker({ token, lang, options, suggestedSlotId }: { token
   const [chosen, setChosen] = useState<{ partnerId: string; slotId: string } | null>(offered ? { partnerId: offered.partnerId, slotId: offered.slotId } : null);
   const [reason, setReason] = useState<string | null>(offered ? t(lang, "suggestedForYou") : null);
   const [pending, startTransition] = useTransition();
+  const [asking, setAsking] = useState<Preference | null>(null);
   const [state, action, booking] = useActionState<BookState, FormData>(bookSlot, {});
 
   const partners = [...new Map(options.map((o) => [o.partnerId, o])).values()];
   const selected = options.find((o) => o.slotId === chosen?.slotId);
 
   function ask(pref: Preference) {
+    setAsking(pref);
     startTransition(async () => {
       const s = await suggestSlot(token, pref, lang);
       if (s) {
@@ -53,7 +55,7 @@ export function BookingPicker({ token, lang, options, suggestedSlotId }: { token
         </h2>
         <div className="grid grid-cols-3 gap-2">
           {PREFS.map(({ key, icon: Icon }) => (
-            <Button key={key} type="button" variant="outline" disabled={pending} onClick={() => ask(key)} className="h-auto flex-col gap-1 px-2 py-3 text-xs sm:text-sm">
+            <Button key={key} type="button" variant="outline" disabled={pending} loading={pending && asking === key} onClick={() => ask(key)} className="h-auto flex-col gap-1 px-2 py-3 text-xs sm:text-sm">
               <Icon className="size-5 text-primary" aria-hidden="true" />
               {t(lang, key)}
             </Button>

@@ -1,5 +1,9 @@
+"use client"
+
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
+import { Loader2 } from "lucide-react"
+import { useFormStatus } from "react-dom"
 import { cn } from "@/lib/utils"
 
 // Touch-friendly sizes: every control is at least 40 px tall, primary actions 48 px.
@@ -32,22 +36,35 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * A button that shows a turning ring while its work is under way: a form's submit button while the form is sending
+ * (no extra code at the call site), or any button given `loading`. A busy button is disabled so it cannot be pressed twice.
+ */
 function Button({
   className,
   variant = "default",
   size = "default",
   render,
+  loading,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & { loading?: boolean }) {
+  const { pending } = useFormStatus()
+  const busy = loading ?? (pending && props.type === "submit")
   return (
     <ButtonPrimitive
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, className }), busy && "[&>svg:not([data-spinner])]:hidden")}
       // A link rendered through `render` is not a native button.
       nativeButton={render ? false : undefined}
       render={render}
+      aria-busy={busy || undefined}
       {...props}
-    />
+      disabled={props.disabled || busy}
+    >
+      {busy && <Loader2 data-spinner="" className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+      {children}
+    </ButtonPrimitive>
   )
 }
 

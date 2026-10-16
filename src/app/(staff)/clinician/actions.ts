@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth/session";
 import { transitionJourney } from "@/lib/journey/server";
 import { createClient } from "@/lib/supabase/server";
 
-export type ReviewState = { error?: string };
+export type ReviewState = { error?: string; typed?: { fib4: string; summary: string; recommends: boolean } };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
