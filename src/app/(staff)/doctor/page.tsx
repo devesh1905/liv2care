@@ -111,6 +111,10 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">[
   await requireRole("doctor");
   const raw = (await searchParams).notice;
   const notice = NOTICES[Array.isArray(raw) ? raw[0] : (raw ?? "")];
+  // After an action that messages the patient, the notice links to the patient's phone, where that message appears.
+  const phoneRaw = (await searchParams).phone;
+  const phoneId = Array.isArray(phoneRaw) ? phoneRaw[0] : phoneRaw;
+  const phoneLink = notice && phoneId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(phoneId) ? `/phone/${phoneId}` : null;
   const supabase = await createClient();
 
   const [{ data }, { data: work }] = await Promise.all([
@@ -140,7 +144,17 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">[
       {notice && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 font-semibold text-ok">
           <CircleCheck className="size-5 shrink-0" aria-hidden="true" />
-          {notice}
+          <span>
+            {notice}
+            {phoneLink && (
+              <>
+                {" "}
+                <a href={phoneLink} target="_blank" rel="noopener" className="underline underline-offset-4">
+                  See the message on the patient&apos;s phone
+                </a>
+              </>
+            )}
+          </span>
         </p>
       )}
 

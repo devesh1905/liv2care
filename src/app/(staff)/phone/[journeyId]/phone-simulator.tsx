@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ExternalLink, MessageSquareText, Signal, Wifi } from "lucide-react";
+import { ArrowLeft, CheckCheck, ExternalLink, MessageSquareText, Signal, Wifi } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useRef, useState } from "react";
 
@@ -71,19 +71,22 @@ export function PhoneSimulator({ patientName, messages }: { patientName: string;
           </>
         ) : (
           <>
-            <div className="flex items-center gap-3 border-b bg-emerald-700 px-4 py-3 text-white">
+            <div className="flex items-center gap-3 bg-[#075e54] px-4 py-3 text-white">
               <span className="grid size-9 place-items-center rounded-full bg-white/20" aria-hidden="true">
                 <MessageSquareText className="size-5" />
               </span>
               <div className="leading-tight">
                 <p className="text-sm font-bold">Liv2care</p>
-                <p className="text-xs text-emerald-100">Messages for {patientName}</p>
+                <p className="text-xs text-emerald-100">Official updates for {patientName}</p>
               </div>
             </div>
-            <div className="flex flex-1 flex-col gap-3 overflow-y-auto bg-emerald-50 px-3 py-4" aria-live="polite">
+            <div className="flex flex-1 flex-col gap-3 overflow-y-auto bg-[#efeae2] px-3 py-4" aria-live="polite">
               {messages.length === 0 && <p className="m-auto text-center text-sm text-slate-500">No messages yet.</p>}
               {messages.map((m) => (
-                <article key={m.id} className="max-w-[88%] self-start rounded-2xl rounded-tl-sm bg-white px-3 py-2 text-sm shadow-sm">
+                <article
+                  key={m.id}
+                  className={`max-w-[88%] self-start rounded-2xl rounded-tl-sm px-3 py-2 text-sm shadow-sm ${m.channel === "WhatsApp" ? "bg-white" : "bg-slate-200"}`}
+                >
                   <p className="whitespace-pre-line break-words">
                     {m.body.split(URL_PATTERN).map((part, i) => {
                       const path = /^https?:\/\//.test(part) ? pathOf(part) : null;
@@ -92,7 +95,7 @@ export function PhoneSimulator({ patientName, messages }: { patientName: string;
                           key={i}
                           type="button"
                           onClick={() => setOpen(path)}
-                          className="my-1 block w-full rounded-lg bg-emerald-700 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-emerald-800"
+                          className="my-1 block w-full rounded-lg bg-[#075e54] px-3 py-2 text-center text-sm font-semibold text-white hover:bg-[#064e46]"
                         >
                           {path.startsWith("/patient/") ? "Open my progress page" : "Open the link"}
                         </button>
@@ -101,13 +104,15 @@ export function PhoneSimulator({ patientName, messages }: { patientName: string;
                       );
                     })}
                   </p>
-                  <p className="mt-1 text-right text-[11px] text-slate-500">
+                  <p className="mt-1 flex items-center justify-end gap-1 text-[11px] text-slate-600">
                     {m.channel} · {clock(m.created_at)}
+                    {m.channel === "WhatsApp" && <CheckCheck className="size-3.5 text-sky-600" aria-hidden="true" />}
                   </p>
                 </article>
               ))}
               <div ref={endRef} />
             </div>
+            <div className="border-t bg-slate-100 px-3 py-2 text-center text-xs text-slate-600">Replies are switched off in this demo.</div>
           </>
         )}
       </div>

@@ -44,7 +44,7 @@ export async function approveFibroscan(_prev: DecisionState, form: FormData): Pr
   const result = await run(ctx.journeyId, ctx.doctor.id, { type: "APPROVE_VCTE" }, {}, { decision: { kind: "vcte_approve" } });
   if (!result.ok) return { error: result.error.message };
   await sendBookingLink(createAdminClient(), ctx.journeyId, (url, m) => m.fibroscanApproved(url));
-  redirect("/doctor?notice=approved");
+  redirect(`/doctor?notice=approved&phone=${ctx.journeyId}`);
 }
 
 export async function declineFibroscan(_prev: DecisionState, form: FormData): Promise<DecisionState> {
@@ -90,13 +90,13 @@ export async function chooseNextStep(_prev: DecisionState, form: FormData): Prom
     );
     if (!result.ok) return { error: result.error.message };
     await mockProvider(admin).send({ journeyId: ctx.journeyId, channel: "SMS", body: templatesFor(await languageOf(admin, ctx.journeyId)).routineFollowUp(months) }).catch(() => undefined);
-    redirect("/doctor?notice=routine");
+    redirect(`/doctor?notice=routine&phone=${ctx.journeyId}`);
   }
 
   const result = await run(ctx.journeyId, ctx.doctor.id, { type: "CHOOSE_NEXT_STEP", step }, { step }, { decision: { kind: "next_step", nextStep: step } });
   if (!result.ok) return { error: result.error.message };
   await sendBookingLink(admin, ctx.journeyId, (url, m) => (step === "eval" ? m.furtherEvaluation(url) : m.specialistReferral(url)));
-  redirect(`/doctor?notice=${step}`);
+  redirect(`/doctor?notice=${step}&phone=${ctx.journeyId}`);
 }
 
 /** The follow-up visit happened, or was missed (the patient is sent a link to choose a new time). */
@@ -109,5 +109,5 @@ export async function recordFollowUp(_prev: DecisionState, form: FormData): Prom
   const result = await run(ctx.journeyId, ctx.doctor.id, { type: outcome === "attended" ? "MARK_ATTENDED" : "MARK_MISSED" }, {}, {});
   if (!result.ok) return { error: result.error.message };
   if (outcome === "missed") await notifyMissed(createAdminClient(), ctx.journeyId, { id: ctx.doctor.id, role: "doctor" });
-  redirect(`/doctor?notice=${outcome === "attended" ? "attended" : "missed"}`);
+  redirect(`/doctor?notice=${outcome === "attended" ? "attended" : "missed"}${outcome === "missed" ? `&phone=${ctx.journeyId}` : ""}`);
 }
