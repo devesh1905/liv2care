@@ -1,4 +1,4 @@
-// Checks the public parts of a deployed site without any password: home page, role buttons and the sign-in side panel,
+// Checks the public parts of a deployed site without any password: home page, the demo role pages and their sign-in,
 // an invalid patient link, the health endpoint and the staff-page redirect. Takes screenshots at 360 px and 1280 px.
 //   node scripts/check-live.mjs <out-dir> [base-url]
 import { chromium } from "@playwright/test";
@@ -38,25 +38,24 @@ for (const size of [
   });
   check(`[${size.name}] bundled fonts are available`, fonts.every(Boolean), JSON.stringify(fonts));
 
-  const roles = ["Treating doctor", "Telemedicine clinician", "Lab", "Diagnostic centre", "Operations"];
-  const buttons = await Promise.all(roles.map((r) => page.getByRole("button", { name: new RegExp(`^${r}`) }).first().isVisible().catch(() => false)));
-  check(`[${size.name}] a button for every role`, buttons.every(Boolean), roles.filter((_, i) => !buttons[i]).join(", ") || "all five");
+  check(`[${size.name}] home page shows the doctor and patient sections`, await page.getByRole("heading", { name: "For patients" }).isVisible().catch(() => false));
+  check(`[${size.name}] home page has no role buttons`, (await page.getByRole("button", { name: /^Treating doctor/ }).count()) === 0);
 
   if (size.name === "phone") {
-    await page.getByRole("button", { name: /^Treating doctor/ }).first().click();
-    const panel = page.getByRole("dialog");
-    await panel.waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
-    check("sign-in side panel opens", await panel.isVisible());
-    check("panel email is filled in and locked", (await panel.getByLabel("Email").inputValue().catch(() => "")) === "doctor@demo.liv2care.test");
-    await page.waitForTimeout(500); // let the panel finish sliding in
-    await page.screenshot({ path: `${outDir}/panel-phone.png` });
-    await panel.getByLabel("Password").fill("definitely-not-the-password");
-    await panel.getByRole("button", { name: "Sign in" }).click();
-    await panel.getByRole("alert").filter({ hasText: /Wrong email or password/ }).waitFor({ timeout: 15000 }).catch(() => {});
-    check("a wrong password is refused", await panel.getByText("Wrong email or password").isVisible().catch(() => false));
-    await page.keyboard.press("Escape");
-    // the panel slides out over a fraction of a second, so wait for it rather than looking at once
-    check("Escape closes the panel", await panel.waitFor({ state: "hidden", timeout: 5000 }).then(() => true, () => false));
+    const roles = ["Treating doctor", "Telemedicine clinician", "Lab", "Diagnostic centre", "Operations"];
+    await page.goto(`${base}/demo`, { waitUntil: "networkidle" });
+    const links = await Promise.all(roles.map((r) => page.getByRole("link", { name: new RegExp(`^${r}`) }).first().isVisible().catch(() => false)));
+    check("demo page: a link for every role", links.every(Boolean), roles.filter((_, i) => !links[i]).join(", ") || "all five");
+    await page.screenshot({ path: `${outDir}/demo-phone.png` });
+
+    await page.getByRole("link", { name: /^Treating doctor/ }).first().click();
+    await page.waitForURL("**/demo/doctor");
+    check("role page: email is filled in and locked", (await page.getByLabel("Email").inputValue().catch(() => "")) === "doctor@demo.liv2care.test");
+    await page.screenshot({ path: `${outDir}/demo-doctor-phone.png` });
+    await page.getByLabel("Password").fill("definitely-not-the-password");
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.getByRole("alert").filter({ hasText: /Wrong email or password/ }).waitFor({ timeout: 15000 }).catch(() => {});
+    check("a wrong password is refused", await page.getByText("Wrong email or password").isVisible().catch(() => false));
   }
   check(`[${size.name}] no script errors`, problems.length === 0, problems.slice(0, 2).join(" | "));
   await context.close();

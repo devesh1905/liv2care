@@ -6,7 +6,7 @@ import { StatTile } from "@/components/stat-tile";
 import { StatusPill } from "@/components/status-pill";
 import { Card } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
-import { statusOf } from "@/lib/journey/derived";
+import { stateOf, statusOf } from "@/lib/journey/derived";
 import { STAGE, STAGE_LABEL, type Stage } from "@/lib/journey/stages";
 import { actorLabel, dueText, eventLabel, maskLinks, percent } from "@/lib/ops/format";
 import { createClient } from "@/lib/supabase/server";
@@ -56,7 +56,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/ops">["se
 
   // Row-level security: operations reads the status view, tasks, audit rows, messages and the KPI view, and nothing clinical.
   const [{ data: status }, { data: tasks }, { data: kpiRow }, { data: events }, { data: messages }] = await Promise.all([
-    supabase.from("journey_status").select("journey_id, patient_code, patient_name, stage, missed").order("patient_code"),
+    supabase.from("journey_status").select("journey_id, patient_code, patient_name, stage, missed, route").order("patient_code"),
     supabase.from("tasks").select("id, journey_id, owner, description, due_at").is("done_at", null).order("due_at"),
     supabase.from("kpi_summary").select("*").maybeSingle(),
     supabase.from("journey_events").select("id, journey_id, actor_role, event, from_stage, to_stage, created_at").order("id", { ascending: false }).limit(40),
@@ -117,7 +117,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/ops">["se
         <div className="grid gap-3 lg:grid-cols-2">
           {pending.map((t) => {
             const row = byJourney.get(t.journey_id)!;
-            const state = { stage: row.stage as Stage, missed: row.missed };
+            const state = stateOf(row);
             const due = dueText(t.due_at, now);
             const pill = statusOf(state);
             return (

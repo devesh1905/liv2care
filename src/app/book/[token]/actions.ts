@@ -5,6 +5,7 @@ import { bookForLink, loadBookingContext } from "@/lib/booking/book";
 import { aiDeps } from "@/lib/booking/aiLimits";
 import { hashToken } from "@/lib/booking/links";
 import { loadSlotOptions } from "@/lib/booking/options";
+import { uploadReportForLink } from "@/lib/booking/uploadReport";
 import { isLang, t, type Lang } from "@/lib/i18n/patient";
 import { suggest } from "@/lib/logistics/suggest";
 import type { Preference, Suggestion } from "@/lib/logistics/types";
@@ -46,4 +47,20 @@ export async function bookSlot(_prev: BookState, form: FormData): Promise<BookSt
   const result = await bookForLink(createAdminClient(), token, partnerId, slotId);
   if (result.ok) return { done: true };
   return { error: result.code === "slot_unavailable" ? t(lang, "slotTaken") : result.code === "failed" ? t(lang, "somethingWrong") : t(lang, "linkInvalid") };
+}
+
+export type UploadState = { error?: string; done?: boolean };
+
+/** The patient sends their existing lab report (a PDF or a photo) through the private link. */
+export async function sendReport(_prev: UploadState, form: FormData): Promise<UploadState> {
+  const token = String(form.get("token") ?? "");
+  const lang: Lang = isLang(form.get("lang")) ? (form.get("lang") as Lang) : "en";
+  // Revalidate up front: Next 16.4 fails to re-render after an action that returns without revalidating.
+  revalidatePath(`/book/${token}`);
+
+  const file = form.get("report");
+  if (!(file instanceof File) || file.size === 0) return { error: t(lang, "uploadChoose") };
+  const result = await uploadReportForLink(createAdminClient(), token, new Uint8Array(await file.arrayBuffer()), file.name);
+  if (result.ok) return { done: true };
+  return { error: result.code === "invalid_link" ? t(lang, "linkInvalid") : result.code === "bad_file" ? result.message : t(lang, "uploadFailed") };
 }

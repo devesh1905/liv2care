@@ -9,9 +9,11 @@ for (const path of ["/", "/login", `/book/${TOKEN_LIKE}`, `/patient/${TOKEN_LIKE
     const res = await request.get(path);
     const h = res.headers();
     expect(h["x-content-type-options"]).toBe("nosniff");
-    expect(h["x-frame-options"]).toBe("DENY");
+    // the patient's own pages may be framed by this site only (the "patient's phone" view); everything else not at all
+    const patientPage = path.startsWith("/book/") || path.startsWith("/patient/");
+    expect(h["x-frame-options"]).toBe(patientPage ? "SAMEORIGIN" : "DENY");
     expect(h["referrer-policy"]).toBe("strict-origin-when-cross-origin");
-    expect(h["content-security-policy"]).toContain("frame-ancestors 'none'");
+    expect(h["content-security-policy"]).toContain(patientPage ? "frame-ancestors 'self'" : "frame-ancestors 'none'");
     expect(h["content-security-policy"]).toContain("object-src 'none'");
     expect(h["permissions-policy"]).toContain("camera=()");
     expect(h["strict-transport-security"]).toContain("max-age=");
@@ -20,7 +22,7 @@ for (const path of ["/", "/login", `/book/${TOKEN_LIKE}`, `/patient/${TOKEN_LIKE
 
 test("search engines are kept off patient links and staff pages", async ({ request }) => {
   const text = await (await request.get("/robots.txt")).text();
-  for (const rule of ["Disallow: /book/", "Disallow: /patient/", "Disallow: /doctor", "Disallow: /ops", "Disallow: /reports/"]) {
+  for (const rule of ["Disallow: /phone", "Disallow: /book/", "Disallow: /patient/", "Disallow: /doctor", "Disallow: /ops", "Disallow: /reports/"]) {
     expect(text).toContain(rule);
   }
   const page = await request.get(`/book/${TOKEN_LIKE}`);

@@ -45,16 +45,19 @@ for (const [name, size] of [
       }
     });
 
-    test("the role sign-in side panel", async ({ page }) => {
-      await page.goto("/");
-      await page.getByRole("button", { name: /^Treating doctor/ }).first().click();
-      await expect(page.getByRole("dialog")).toBeVisible();
-      await page.waitForTimeout(400); // let the panel finish sliding in
-      await scan(page, `side panel ${name}`);
-      await page.getByRole("dialog").getByLabel("Password").fill("not-the-password");
-      await page.getByRole("dialog").getByRole("button", { name: "Sign in" }).click();
-      await expect(page.getByRole("dialog").getByRole("alert")).toBeVisible();
-      await scan(page, `side panel with an error ${name}`);
+    test("the demo role pages", async ({ page }) => {
+      await page.goto("/demo");
+      await page.waitForLoadState("networkidle");
+      await scan(page, `demo index ${name}`);
+      await page.getByRole("link", { name: /^Treating doctor/ }).first().click();
+      await page.waitForURL("**/demo/doctor");
+      await scan(page, `demo role page ${name}`);
+      await page.getByLabel("Password").fill("not-the-password");
+      await page.getByRole("button", { name: "Sign in" }).click();
+      await expect(page.getByRole("alert").filter({ hasText: "Wrong email or password" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Sign in" })).toBeEnabled();
+      await page.waitForTimeout(500); // the button fades back from its "signing in" look
+      await scan(page, `demo role page with an error ${name}`);
     });
   });
 

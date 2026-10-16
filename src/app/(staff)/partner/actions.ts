@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole } from "@/lib/auth/session";
 import { transitionJourney } from "@/lib/journey/server";
-import { sendBookingLink } from "@/lib/booking/notify";
+import { notifyMissed } from "@/lib/booking/reschedule";
 import { parseSlotInput } from "@/lib/partner/slotInput";
 import { checkPdf } from "@/lib/reports/pdf";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -81,7 +81,7 @@ async function simpleEvent(form: FormData, type: "MARK_MISSED" | "MARK_ATTENDED"
   if (!result.ok) return { error: result.error.message };
 
   if (type === "MARK_MISSED") {
-    await sendBookingLink(createAdminClient(), journeyId, (url, m) => m.missed(url), "SMS");
+    await notifyMissed(createAdminClient(), journeyId, { id: user.id, role: user.role });
   }
   redirect(`/partner?notice=${type === "MARK_MISSED" ? "missed" : "attended"}`);
 }

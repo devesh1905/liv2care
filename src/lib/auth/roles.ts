@@ -28,6 +28,8 @@ export const AREA_ROLES: Record<string, readonly StaffRole[]> = {
   "/clinician": ["clinician"],
   "/partner": ["lab", "centre"],
   "/ops": ["ops"],
+  // the patient's-phone view for the demo: the doctor and operations, for patients they may already see
+  "/phone": ["doctor", "ops"],
 };
 
 export function isStaffRole(value: unknown): value is StaffRole {

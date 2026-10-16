@@ -43,6 +43,8 @@ async function reachFibroscanReport(browser: Browser, name: string) {
   await expect(decision.getByText("typed by the clinician")).toBeVisible();
   await decision.getByRole("button", { name: "Approve FibroScan" }).click();
   await expect(doctor.getByRole("status").filter({ hasText: "FibroScan approved" })).toBeVisible();
+  // the notice links to the patient's phone, where the FibroScan message with its booking link is
+  await expect(doctor.getByRole("link", { name: "See the message on the patient's phone" })).toHaveAttribute("href", `/phone/${journeyId}`);
 
   const patient = await (await browser.newContext()).newPage();
   await patient.goto(await linkFromMessage(journeyId, "Your doctor has recommended a FibroScan"));

@@ -34,7 +34,12 @@ test("operations offers a new time to a patient who missed a visit", async ({ br
   await lab.locator("section:has(> header)").filter({ hasText: name }).getByRole("button", { name: "Mark missed" }).click();
   await expect(lab.getByRole("status").filter({ hasText: "Marked missed" })).toBeVisible();
 
-  // operations asks for a suggestion and sends it
+  // marking the visit missed already sent the patient a suggested new time, with no one pressing a button
+  const { data: automatic } = await admin.from("messages").select("body").eq("journey_id", journeyId).like("body", "You missed your appointment. We suggest%");
+  expect(automatic).toHaveLength(1);
+  expect(automatic![0].body).toContain("?pick=");
+
+  // operations can also send a fresh suggestion by hand. Ask for it for a suggestion and sends it
   const ops = await signInAs(browser, "ops");
   const card = ops.locator("section:has(> header)").filter({ hasText: name });
   await expect(card).toContainText("Reschedule the missed appointment");
@@ -44,9 +49,9 @@ test("operations offers a new time to a patient who missed a visit", async ({ br
   await card.getByRole("button", { name: "Send offer to the patient" }).click();
   await expect(ops.getByRole("status").filter({ hasText: "New time offered" })).toBeVisible();
 
-  const { data: msg } = await admin.from("messages").select("body").eq("journey_id", journeyId).like("body", "You missed your appointment. We suggest%").single();
+  const { data: msg } = await admin.from("messages").select("body").eq("journey_id", journeyId).like("body", "You missed your appointment. We suggest%").order("created_at", { ascending: false }).limit(1).single();
   expect(msg!.body).toContain("?pick=");
-  const { data: event } = await admin.from("journey_events").select("actor_role").eq("journey_id", journeyId).eq("event", "RESCHEDULE_OFFER_SENT").single();
+  const { data: event } = await admin.from("journey_events").select("actor_role").eq("journey_id", journeyId).eq("event", "RESCHEDULE_OFFER_SENT").eq("actor_role", "ops").single();
   expect(event!.actor_role).toBe("ops");
   // the audit trail names it, and the message log shows the text with the private link shortened
   await expect(ops.getByText("New time offered to the patient").first()).toBeVisible();

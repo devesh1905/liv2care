@@ -15,11 +15,24 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 
+const sameOriginFrameHeaders = securityHeaders.map((h) =>
+  h.key === "X-Frame-Options"
+    ? { ...h, value: "SAMEORIGIN" }
+    : h.key === "Content-Security-Policy"
+      ? { ...h, value: h.value.replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
+      : h,
+);
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      // Staff pages and everything else may not be framed at all.
+      { source: "/((?!book/|patient/).*)", headers: securityHeaders },
+      // The patient's own pages may be framed by this site only: the "patient's phone" view shows them inside a phone.
+      { source: "/:page(book|patient)/:path*", headers: sameOriginFrameHeaders },
+    ];
   },
   turbopack: {
     rules: {

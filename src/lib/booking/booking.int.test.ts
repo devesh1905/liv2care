@@ -99,7 +99,7 @@ describe("progress links", () => {
     expect(after).toMatchObject({ kind: "ready", stage: STAGE.LAB_BOOKED });
     expect(after.kind === "ready" && after.appointment?.place).toBe(option.partnerName);
     // nothing but these fields is ever loaded for the patient
-    expect(Object.keys(after).sort()).toEqual(["appointment", "firstName", "kind", "language", "missed", "stage"]);
+    expect(Object.keys(after).sort()).toEqual(["appointment", "awaitingReport", "firstName", "kind", "language", "missed", "stage"]);
 
     expect(await loadTimelineView("x".repeat(32))).toEqual({ kind: "invalid" });
     expect(await loadTimelineView(bookToken)).toEqual({ kind: "invalid" }); // a booking token does not open the progress page

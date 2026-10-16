@@ -21,7 +21,7 @@ test("public pages fit a 360 px phone", async ({ browser }) => {
 for (const [role, path, heading] of [
   ["doctor", "/doctor", "Treating doctor"],
   ["clinician", "/clinician", "Telemedicine clinician"],
-  ["lab", "/partner", "Lab and centre"],
+  ["lab", "/partner", "Lab"],
   ["ops", "/ops", "Operations"],
 ] as const) {
   test(`the ${role} page fits a 360 px phone`, async ({ browser }) => {

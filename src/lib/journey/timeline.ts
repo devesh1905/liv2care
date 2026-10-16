@@ -20,6 +20,7 @@ export function timelineSteps(stage: Stage): TimelineStep[] {
 
 /** Translation keys for the "what happens next" text and who acts (see src/lib/i18n/patient.ts). */
 export type NextTextKey =
+  | "nextUpload"
   | "nextBookLab"
   | "nextLabVisit"
   | "nextClinician"
@@ -50,7 +51,8 @@ const NEXT: Record<Stage, { text: NextTextKey; who: WhoKey | null }> = {
 };
 
 /** What the patient should know is happening next, in words they can follow. Logistics only. */
-export function nextForPatient({ stage, missed }: JourneyState): { text: NextTextKey; who: WhoKey | null } {
+export function nextForPatient({ stage, missed, awaitingReport }: JourneyState): { text: NextTextKey; who: WhoKey | null } {
+  if (awaitingReport && stage === STAGE.ORDERED) return { text: "nextUpload", who: "whoYou" };
   if (missed && stage !== STAGE.COMPLETE && stage !== STAGE.DECLINED) return { text: "nextMissed", who: "whoYou" };
   return NEXT[stage];
 }

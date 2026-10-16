@@ -18,7 +18,7 @@ type Ready = Extract<TimelineView, { kind: "ready" }>;
 
 function Progress({ view, lang }: { view: Ready; lang: Lang }) {
   const steps = timelineSteps(view.stage);
-  const next = nextForPatient({ stage: view.stage, missed: view.missed });
+  const next = nextForPatient({ stage: view.stage, missed: view.missed, awaitingReport: view.awaitingReport });
 
   return (
     <>

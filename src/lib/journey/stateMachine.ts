@@ -37,6 +37,8 @@ const RULES: { [K in JourneyEvent["type"]]: Rule } = {
   MARK_MISSED: { roles: ["ops", "lab", "centre", "doctor"], from: BOOKED, to: (s) => s.stage },
   RESCHEDULE: { roles: ["patient", "ops"], from: BOOKED, to: (s) => s.stage },
   LAB_UPLOAD: { roles: ["lab"], from: [STAGE.LAB_BOOKED], to: STAGE.REPORT_IN },
+  // Option 1 where the patient sends the existing report through their link.
+  PATIENT_UPLOAD: { roles: ["patient"], from: [STAGE.ORDERED], to: STAGE.REPORT_IN },
   CLINICIAN_SUBMIT: {
     roles: ["clinician"],
     from: [STAGE.REPORT_IN],
@@ -85,6 +87,10 @@ export function decide(state: JourneyState, event: JourneyEvent, actor: Actor): 
     return fail("wrong_stage", `${event.type} is not allowed at stage ${state.stage}`);
   }
 
+  // On the existing-report route the patient uploads a report instead of booking a lab.
+  if (event.type === "PATIENT_UPLOAD" && !state.awaitingReport) return fail("wrong_stage", "No report was asked of the patient");
+  if (event.type === "BOOK" && state.awaitingReport) return fail("wrong_stage", "The patient has to upload the report first");
+
   // A missed appointment must be rescheduled before anything else moves.
   if (event.type === "RESCHEDULE" && !state.missed) {
     return fail("missed_state", "Nothing to reschedule");
@@ -112,8 +118,10 @@ function fail(code: Extract<Decision, { ok: false }>["error"]["code"], message: 
 export type StartRoute = "order_tests" | "existing_report";
 
 /** The two ways in. Only the treating doctor starts a journey. */
-export function decideStart(route: StartRoute, actor: Actor): Decision {
+export function decideStart(route: StartRoute, actor: Actor, hasReport = true): Decision {
   if (actor.role !== "doctor") return fail("wrong_role", `${actor.role} cannot start a journey`);
-  const stage = route === "existing_report" ? STAGE.REPORT_IN : STAGE.ORDERED;
-  return { ok: true, next: { stage, missed: false }, changesStage: true };
+  // Option 1 starts at the clinician's queue when the doctor has the report; otherwise it waits for the patient's upload.
+  const waiting = route === "existing_report" && !hasReport;
+  const stage = route === "existing_report" && hasReport ? STAGE.REPORT_IN : STAGE.ORDERED;
+  return { ok: true, next: { stage, missed: false, ...(waiting ? { awaitingReport: true } : {}) }, changesStage: true };
 }

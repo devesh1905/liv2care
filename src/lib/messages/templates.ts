@@ -17,6 +17,10 @@ const en = {
     `You missed your appointment. We suggest ${place}, ${slot}. Tap to confirm it or choose another time: ${url}`,
   bookingConfirmed: (place: string, slot: string) => `Booking confirmed: ${place}, ${slot}. We will remind you the day before.`,
   rescheduled: (place: string, slot: string) => `Rescheduled: ${place}, ${slot}.`,
+  uploadRequest: (url: string, progress?: string) =>
+    `Your doctor would like to see your latest lab report. Tap to upload it, as a PDF or a photo: ${url}${progress ? `
+Track your progress: ${progress}` : ""}`,
+  reportReceived: () => "Thank you, we have received your report. Your doctor's team will look at it and we will update you.",
   reminder: (url: string) => `Reminder: your next step is overdue. Tap to continue: ${url}`,
   existingReportUsed: (progress?: string) =>
     `Your doctor will use your existing lab reports, with your consent. No repeat test is needed. We will update you after the review.${progress ? `\nTrack your progress: ${progress}` : ""}`,
@@ -36,6 +40,10 @@ const hi: Templates = {
     `आप अपना अपॉइंटमेंट चूक गए। हमारा सुझाव है: ${place}, ${slot}। इसे पक्का करने या दूसरा समय चुनने के लिए यहाँ टैप करें: ${url}`,
   bookingConfirmed: (place, slot) => `बुकिंग पक्की हो गई: ${place}, ${slot}। हम एक दिन पहले आपको याद दिलाएँगे।`,
   rescheduled: (place, slot) => `नया समय तय हुआ: ${place}, ${slot}।`,
+  uploadRequest: (url, progress) =>
+    `आपके डॉक्टर आपकी ताज़ा लैब रिपोर्ट देखना चाहते हैं। उसे PDF या फ़ोटो के रूप में अपलोड करने के लिए यहाँ टैप करें: ${url}${progress ? `
+अपनी प्रगति देखें: ${progress}` : ""}`,
+  reportReceived: () => "धन्यवाद, हमें आपकी रिपोर्ट मिल गई है। आपके डॉक्टर की टीम उसे देखेगी और हम आपको बताएँगे।",
   reminder: (url) => `याद दिलाना: आपका अगला कदम अभी बाकी है। जारी रखने के लिए यहाँ टैप करें: ${url}`,
   existingReportUsed: (progress) =>
     `आपके डॉक्टर आपकी मौजूदा लैब रिपोर्ट आपकी सहमति से इस्तेमाल करेंगे। दोबारा टेस्ट की ज़रूरत नहीं है। समीक्षा के बाद हम आपको बताएँगे।${progress ? `\nअपनी प्रगति देखें: ${progress}` : ""}`,

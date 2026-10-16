@@ -38,10 +38,18 @@ describe("startJourney()", () => {
     }));
   });
 
+  it("starts an existing-report journey with no file at the first stage, waiting for the patient", async () => {
+    const { admin, rpc } = fakeAdmin();
+    expect(await startJourney(admin, { id: "d1", role: "doctor" }, { ...base, route: "existing_report" })).toMatchObject({ ok: true });
+    expect(rpc).toHaveBeenCalledWith("start_journey", expect.objectContaining({
+      p_report: null,
+      p_first_task: { owner: "Patient", description: "Upload the existing lab report", hours: 24 },
+    }));
+  });
+
   it("refuses non-doctors and wrong report combinations without calling the database", async () => {
     const { admin, rpc } = fakeAdmin();
     expect(await startJourney(admin, { id: "l1", role: "lab" }, base)).toMatchObject({ ok: false, error: { code: "wrong_role" } });
-    expect(await startJourney(admin, { id: "d1", role: "doctor" }, { ...base, route: "existing_report" })).toMatchObject({ ok: false });
     expect(await startJourney(admin, { id: "d1", role: "doctor" }, { ...base, report: { storagePath: "a", fileName: "a.pdf" } })).toMatchObject({ ok: false });
     expect(rpc).not.toHaveBeenCalled();
   });

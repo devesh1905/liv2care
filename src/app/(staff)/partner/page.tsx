@@ -54,8 +54,19 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
   const rows = (visits ?? []) as unknown as Visit[];
   const uploadLabel = user.role === "lab" ? "Lab report" : "FibroScan report";
 
+  const isLab = user.role === "lab";
+
   return (
     <>
+      <PageHeader
+        title={isLab ? "Lab" : "FibroScan centre"}
+        description={
+          isLab
+            ? "Upload blood-test reports for booked visits, and keep your slots current."
+            : "Upload FibroScan reports for booked scans, mark visits attended or missed, and keep your slots current."
+        }
+        icon={<FlaskConical className="size-5" />}
+      />
       {notice && (
         <p role="status" className="flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 font-semibold text-ok">
           <CircleCheck className="size-5 shrink-0" aria-hidden="true" />
@@ -156,15 +167,8 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
 
 export default function Page(props: PageProps<"/partner">) {
   return (
-    <>
-      <PageHeader
-        title="Lab and centre"
-        description="Upload reports for booked visits, mark visits, and keep your slots current."
-        icon={<FlaskConical className="size-5" />}
-      />
-      <Suspense fallback={<div role="status" aria-label="Loading" className="h-32 animate-pulse rounded-xl bg-muted" />}>
-        <Content searchParams={props.searchParams} />
-      </Suspense>
-    </>
+    <Suspense fallback={<div role="status" aria-label="Loading" className="h-32 animate-pulse rounded-xl bg-muted" />}>
+      <Content searchParams={props.searchParams} />
+    </Suspense>
   );
 }

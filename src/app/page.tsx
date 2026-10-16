@@ -1,5 +1,5 @@
-import { ArrowRight, CalendarCheck, ClipboardList, FileCheck2, ShieldCheck, Stethoscope } from "lucide-react";
-import { DemoLogins } from "@/components/demo-logins";
+import { ArrowRight, CalendarCheck, ClipboardList, FileCheck2, MessageSquareText, ShieldCheck, Stethoscope } from "lucide-react";
+import Link from "next/link";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 
@@ -23,9 +23,16 @@ export default function Home() {
     <div className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
         <Logo />
-        <Button render={<a href="/login" />} variant="outline" size="sm">
-          Staff sign in
-        </Button>
+        <div className="flex items-center gap-2">
+          {demo && (
+            <Button render={<Link href="/demo" />} variant="ghost" size="sm">
+              Demo access
+            </Button>
+          )}
+          <Button render={<a href="/login" />} variant="outline" size="sm">
+            Staff sign in
+          </Button>
+        </div>
       </header>
 
       <main className="flex-1">
@@ -46,48 +53,51 @@ export default function Home() {
                 Staff sign in
                 <ArrowRight aria-hidden="true" />
               </Button>
-              <Button render={<a href="https://github.com/devesh1905/liv2care-prototype" />} variant="outline" size="lg">
-                See the prototype
-              </Button>
+              {demo ? (
+                <Button render={<Link href="/demo" />} variant="outline" size="lg">
+                  Try the demo
+                </Button>
+              ) : (
+                <Button render={<a href="#who" />} variant="outline" size="lg">
+                  Who is it for?
+                </Button>
+              )}
             </div>
           </div>
         </section>
 
-        <section aria-labelledby="try" className="mx-auto w-full max-w-6xl px-4 pt-14 sm:px-6">
-          <h2 id="try" className="font-heading text-2xl font-extrabold sm:text-3xl">
-            Try it yourself
+        <section aria-labelledby="who" className="mx-auto w-full max-w-6xl px-4 pt-14 sm:px-6">
+          <h2 id="who" className="font-heading text-2xl font-extrabold sm:text-3xl">
+            Who is it for?
           </h2>
-          <p className="mt-2 max-w-2xl text-muted-foreground">
-            {demo
-              ? "Everything here uses pretend patients and pretend messages, so nothing is real and nothing is sent. Pick who you want to be, and a panel opens on the right where you sign in with that role’s demo password (ask the team for it)."
-              : "Everything here uses pretend patients and pretend messages. The demo role buttons are switched off on this site for now, so staff sign in with their own account."}
-          </p>
-          <div className="mt-6">
-            <DemoLogins />
-          </div>
-
-          <div className="mt-6 rounded-2xl border bg-secondary/60 p-5 sm:p-6">
-            <h3 className="font-heading text-lg font-extrabold">What you can try today</h3>
-            <ul className="mt-3 flex list-disc flex-col gap-2 pl-5 text-sm sm:text-base">
-              <li>
-                <strong>The doctor</strong> can add a pretend patient, either by uploading a lab report the patient already has or by ordering the tests. Once the clinician has replied, the doctor can approve or decline a FibroScan and choose what happens next.
-              </li>
-              <li>
-                <strong>The clinician</strong> can open the uploaded report, type the FIB-4 value and a short summary, and send them back to the doctor. The app never works out any result itself.
-              </li>
-              <li>
-                <strong>Labs and scan centres</strong> can add appointment times, upload reports, and mark visits as attended or missed.
-              </li>
-              <li>
-                <strong>Operations</strong> can see every patient and what is waiting on whom, spot overdue actions, send reminders, and read the activity log and the (pretend) message log, along with the overall progress numbers.
-              </li>
-              <li>
-                <strong>The patient</strong> has no login. After the doctor orders tests for a pretend patient, a link appears to open the patient&apos;s own page, where they pick a lab and a time (in English or Hindi). Patients also get a simple progress page that shows where they are on the journey.
-              </li>
-            </ul>
-            <p className="mt-3 text-sm text-muted-foreground">
-              Tip: start as the doctor and add a patient, then sign out and come back as the other roles to follow that patient along.
-            </p>
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <article className="flex flex-col gap-3 rounded-2xl border bg-card p-6 shadow-card">
+              <span aria-hidden="true" className="grid size-11 place-items-center rounded-xl bg-secondary text-primary">
+                <Stethoscope className="size-5" />
+              </span>
+              <h3 className="font-heading text-xl font-extrabold">For doctors and care teams</h3>
+              <p className="text-muted-foreground">
+                Pick a patient with type 2 diabetes, choose the route, and see the whole liver-check pathway on one page: tests, clinician
+                review, your decision, the FibroScan and follow-up. Anything overdue is flagged, and every step is logged.
+              </p>
+              <div>
+                <Button render={<a href="/login" />}>
+                  Staff sign in
+                  <ArrowRight aria-hidden="true" />
+                </Button>
+              </div>
+            </article>
+            <article className="flex flex-col gap-3 rounded-2xl border bg-card p-6 shadow-card">
+              <span aria-hidden="true" className="grid size-11 place-items-center rounded-xl bg-secondary text-primary">
+                <MessageSquareText className="size-5" />
+              </span>
+              <h3 className="font-heading text-xl font-extrabold">For patients</h3>
+              <p className="text-muted-foreground">
+                There is nothing to download and no account to make. Your doctor sends you a text message with a private link. Open it to pick
+                a nearby lab or centre and a time that suits you, in English or Hindi, and to see where you are in the process.
+              </p>
+              <p className="text-sm text-muted-foreground">Have a message from your doctor? Open the link in it. If it has expired, ask your doctor&apos;s office for a new one.</p>
+            </article>
           </div>
         </section>
 
