@@ -32,7 +32,7 @@ function RouteOption({
         checked ? "border-primary bg-secondary/60" : "hover:bg-muted/50",
       )}
     >
-      <input type="radio" name="route" value={value} checked={checked} onChange={onSelect} className="sr-only" />
+      <input type="radio" name="route-choice" value={value} checked={checked} onChange={onSelect} className="sr-only" />
       <span aria-hidden="true" className={cn("grid size-10 shrink-0 place-items-center rounded-lg", checked ? "bg-primary text-primary-foreground" : "bg-secondary text-primary")}>
         {icon}
       </span>
@@ -50,7 +50,11 @@ export function EnrolForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState<EnrolState, FormData>(async (prev, data) => {
     const result = await enrolPatient(prev, data);
-    if (result.success) formRef.current?.reset();
+    if (result.success) {
+      formRef.current?.reset();
+      setRoute("order_tests");
+      setPatientUploads(false);
+    }
     // React clears a form after it is sent. When the server refuses it, hand the typed values back so nothing is lost.
     if (result.error) {
       return {
@@ -70,6 +74,10 @@ export function EnrolForm() {
   return (
     <Card aria-labelledby="enrol-title">
       <form ref={formRef} action={action} className="flex flex-col gap-6">
+        {/* What is sent comes from the page's own state, never from the radio buttons: a form reset puts radios back to their
+            first choice, which would quietly turn Option 1 into Option 2. */}
+        <input type="hidden" name="route" value={route} />
+        <input type="hidden" name="patientUploads" value={route === "existing_report" && patientUploads ? "on" : ""} />
         <div className="flex items-start gap-3">
           <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
             <UserPlus className="size-5" />
@@ -124,7 +132,7 @@ export function EnrolForm() {
           <CheckRow name="ultrasound">Also order an ultrasound</CheckRow>
         ) : (
           <div className="flex flex-col gap-3">
-            <CheckRow name="patientUploads" checked={patientUploads} onChange={(e) => setPatientUploads(e.target.checked)}>
+            <CheckRow checked={patientUploads} onChange={(e) => setPatientUploads(e.target.checked)}>
               The patient will upload the report. Send them a private link to do it from their phone.
             </CheckRow>
             {!patientUploads && (
