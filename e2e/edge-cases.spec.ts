@@ -97,7 +97,14 @@ test.describe("enrolling a patient", () => {
     await doctor.getByLabel("Patient name", { exact: true }).evaluate((el) => el.removeAttribute("maxlength"));
     await doctor.getByLabel(/Phone, last 4/).evaluate((el) => el.removeAttribute("maxlength"));
     const refused = (text: string | RegExp) => expect(doctor.getByRole("alert").filter({ hasText: text })).toBeVisible();
-    const enrol = () => doctor.getByRole("button", { name: "Enrol patient" }).click();
+    // wait for the server's answer and for the form to settle, so a message left from the last try cannot count
+    const enrol = async () => {
+      const sent = doctor.waitForResponse((r) => r.request().method() === "POST");
+      await doctor.getByRole("button", { name: "Enrol patient" }).click();
+      await sent;
+      await expect(doctor.getByRole("button", { name: "Enrol patient" })).toBeEnabled();
+      await doctor.waitForTimeout(400);
+    };
     const consent = doctor.getByLabel(/has given consent/);
 
     await consent.check();
