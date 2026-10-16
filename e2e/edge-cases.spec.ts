@@ -117,8 +117,9 @@ test.describe("enrolling a patient", () => {
     await refused("Enter the patient's name");
 
     await doctor.getByLabel("Patient name", { exact: true }).fill(name);
-    await doctor.getByLabel("Age", { exact: true }).evaluate((el) => el.setAttribute("type", "text")); // so letters can be typed
     for (const age of ["17", "121", "forty"]) {
+      // the page puts the number field back after each try, so make it a plain text field again (letters cannot be typed in a number field)
+      await doctor.getByLabel("Age", { exact: true }).evaluate((el) => el.setAttribute("type", "text"));
       await doctor.getByLabel("Age", { exact: true }).fill(age);
       await enrol();
       await refused("Enter an age between 18 and 120");
