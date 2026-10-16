@@ -25,6 +25,8 @@ const sameOriginFrameHeaders = securityHeaders.map((h) =>
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // A report is up to 5 MB; the default limit for a form submission is 1 MB, which would refuse most PDFs and photos.
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   partialPrefetching: true,
   async headers() {
     return [

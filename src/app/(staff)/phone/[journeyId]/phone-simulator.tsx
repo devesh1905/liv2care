@@ -45,7 +45,7 @@ export function PhoneSimulator({ patientName, messages }: { patientName: string;
       <div
         role="group"
         aria-label={`${patientName}'s phone`}
-        className="flex h-[680px] w-[340px] flex-col overflow-hidden rounded-[2.5rem] border-[10px] border-slate-800 bg-white text-slate-900 shadow-xl"
+        className="flex h-[680px] w-full max-w-[340px] flex-col overflow-hidden rounded-[2.5rem] border-[10px] border-slate-800 bg-white text-slate-900 shadow-xl"
       >
         <div className="flex items-center justify-between bg-slate-800 px-5 pb-1 pt-0.5 text-[11px] font-semibold text-white" aria-hidden="true">
           <span>9:41</span>
