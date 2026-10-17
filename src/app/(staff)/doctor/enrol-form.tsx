@@ -32,7 +32,7 @@ function RouteOption({
         checked ? "border-primary bg-secondary/60" : "hover:bg-muted/50",
       )}
     >
-      <input type="radio" name="route" value={value} checked={checked} onChange={onSelect} className="sr-only" />
+      <input type="radio" name="route-choice" value={value} checked={checked} onChange={onSelect} className="sr-only" />
       <span aria-hidden="true" className={cn("grid size-10 shrink-0 place-items-center rounded-lg", checked ? "bg-primary text-primary-foreground" : "bg-secondary text-primary")}>
         {icon}
       </span>
@@ -50,13 +50,34 @@ export function EnrolForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState<EnrolState, FormData>(async (prev, data) => {
     const result = await enrolPatient(prev, data);
-    if (result.success) formRef.current?.reset();
+    if (result.success) {
+      formRef.current?.reset();
+      setRoute("order_tests");
+      setPatientUploads(false);
+    }
+    // React clears a form after it is sent. When the server refuses it, hand the typed values back so nothing is lost.
+    if (result.error) {
+      return {
+        ...result,
+        typed: {
+          name: String(data.get("name") ?? ""),
+          age: String(data.get("age") ?? ""),
+          phone: String(data.get("phone") ?? ""),
+          language: String(data.get("language") ?? "en"),
+          consent: data.get("consent") === "on",
+        },
+      };
+    }
     return result;
   }, {});
 
   return (
     <Card aria-labelledby="enrol-title">
       <form ref={formRef} action={action} className="flex flex-col gap-6">
+        {/* What is sent comes from the page's own state, never from the radio buttons: a form reset puts radios back to their
+            first choice, which would quietly turn Option 1 into Option 2. */}
+        <input type="hidden" name="route" value={route} />
+        <input type="hidden" name="patientUploads" value={route === "existing_report" && patientUploads ? "on" : ""} />
         <div className="flex items-start gap-3">
           <span aria-hidden="true" className="grid size-11 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
             <UserPlus className="size-5" />
@@ -69,16 +90,16 @@ export function EnrolForm() {
 
         <div className="grid gap-4 sm:grid-cols-6">
           <Field label="Patient name" className="sm:col-span-3">
-            <Input name="name" required maxLength={80} autoComplete="off" />
+            <Input name="name" required maxLength={80} autoComplete="off" defaultValue={state.typed?.name} />
           </Field>
           <Field label="Age" className="sm:col-span-1">
-            <Input name="age" type="number" required min={18} max={120} inputMode="numeric" />
+            <Input name="age" type="number" required min={18} max={120} inputMode="numeric" defaultValue={state.typed?.age} />
           </Field>
           <Field label="Phone, last 4 digits" hint="Optional" className="sm:col-span-2">
-            <Input name="phone" inputMode="numeric" pattern="\d{4}" maxLength={4} autoComplete="off" />
+            <Input name="phone" inputMode="numeric" pattern="\d{4}" maxLength={4} autoComplete="off" defaultValue={state.typed?.phone} />
           </Field>
           <Field label="Message language" className="sm:col-span-3">
-            <Select name="language" defaultValue="en">
+            <Select name="language" defaultValue={state.typed?.language ?? "en"}>
               <option value="en">English</option>
               <option value="hi">Hindi</option>
             </Select>
@@ -111,7 +132,7 @@ export function EnrolForm() {
           <CheckRow name="ultrasound">Also order an ultrasound</CheckRow>
         ) : (
           <div className="flex flex-col gap-3">
-            <CheckRow name="patientUploads" checked={patientUploads} onChange={(e) => setPatientUploads(e.target.checked)}>
+            <CheckRow checked={patientUploads} onChange={(e) => setPatientUploads(e.target.checked)}>
               The patient will upload the report. Send them a private link to do it from their phone.
             </CheckRow>
             {!patientUploads && (
@@ -128,7 +149,7 @@ export function EnrolForm() {
           </div>
         )}
 
-        <CheckRow name="consent" required className="rounded-xl bg-secondary/60 p-4 font-semibold">
+        <CheckRow name="consent" required defaultChecked={state.typed?.consent} className="rounded-xl bg-secondary/60 p-4 font-semibold">
           The patient has given consent to this pathway and to sharing their reports with the platform clinician.
         </CheckRow>
 

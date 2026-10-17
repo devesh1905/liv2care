@@ -58,6 +58,14 @@ jobs:
           echo "DEMO_LOGINS=on" >> "$GITHUB_ENV"
           echo "PW_CHANNEL=chrome" >> "$GITHUB_ENV"
       - run: npm run e2e
+      - name: Keep the screenshots from the guided tour
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tour-shots
+          path: tour-shots/
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Keep the traces when a test fails
         if: failure()
         uses: actions/upload-artifact@v4
