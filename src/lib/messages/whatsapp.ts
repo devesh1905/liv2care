@@ -32,7 +32,7 @@ async function post(env: WhatsAppEnv, payload: object, fetchImpl: typeof fetch):
 }
 
 /** Sends the message text to the demo phone. Never throws: a failed relay must not break the booking flow. */
-export async function relayToWhatsApp(body: string, env: WhatsAppEnv = process.env, fetchImpl: typeof fetch = fetch): Promise<WhatsAppResult> {
+export async function relayToWhatsApp(body: string, env: WhatsAppEnv = process.env as WhatsAppEnv, fetchImpl: typeof fetch = fetch): Promise<WhatsAppResult> {
   if (!whatsappConfigured(env)) return { sent: false, reason: "not configured" };
   try {
     const text = await post(env, { type: "text", text: { body, preview_url: true } }, fetchImpl);
