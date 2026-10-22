@@ -21,8 +21,8 @@ function pathOf(url: string): string | null {
 /** A short, readable form of a private link, the way WhatsApp shows the address in a message. */
 function shown(url: string): string {
   try {
-    const { host, pathname } = new URL(url);
-    return `${host}${pathname.slice(0, 12)}…`;
+    const { pathname } = new URL(url);
+    return `liv2care.vercel.app${pathname.slice(0, 12)}…`;
   } catch {
     return url;
   }
