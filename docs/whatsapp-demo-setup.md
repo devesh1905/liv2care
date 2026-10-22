@@ -7,7 +7,7 @@ Two senders are supported. **Twilio's WhatsApp Sandbox** works today, with no bu
 1. Sign in at console.twilio.com (a free trial account is enough).
 2. Open **Messaging > Try it out > Send a WhatsApp message**. Twilio shows the sandbox number (for example +1 415 523 8886) and a join phrase (for example `join something-word`).
 3. On the demo phone, send that join phrase to the sandbox number on WhatsApp. Twilio replies that the phone is connected.
-4. Settings in Vercel (then redeploy): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` (secret, from the console's front page), `TWILIO_WHATSAPP_FROM` (`whatsapp:` plus the sandbox number, for example `whatsapp:+14155238886`), and `DEMO_WHATSAPP_TO` (the demo phone, country code first, digits only).
+4. Settings in Vercel (then redeploy): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` (secret, from the console's front page), `TWILIO_WHATSAPP_FROM` (`whatsapp:` plus the sandbox number, for example `whatsapp:+14155238886`), and `DEMO_WHATSAPP_TO` (the demo phone, country code first, digits only; up to 5 numbers separated by commas, each of which must join the sandbox).
 5. WhatsApp allows free text for 24 hours after the demo phone last messaged the sandbox number, so send any message ("Hi") before each demo.
 
 ## Meta test number (needs a verified business)

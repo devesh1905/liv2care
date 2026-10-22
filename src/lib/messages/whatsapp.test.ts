@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { relayToWhatsApp, twilioConfigured, whatsappConfigured } from "./whatsapp";
+import { demoNumbers, relayToWhatsApp, twilioConfigured, whatsappConfigured } from "./whatsapp";
 
 const env = { WHATSAPP_PHONE_NUMBER_ID: "1234567890", WHATSAPP_ACCESS_TOKEN: "secret-token", DEMO_WHATSAPP_TO: "919876543210" };
 const ok = () => Promise.resolve(new Response("{}", { status: 200 }));
@@ -73,5 +73,28 @@ describe("Twilio sandbox", () => {
     expect(result.reason).toContain("sandbox");
     expect(JSON.stringify(result)).not.toContain("twilio-secret");
     expect((await relayToWhatsApp("hi", twilio, () => Promise.reject(new Error("down twilio-secret")))).sent).toBe(false);
+  });
+});
+
+describe("more than one demo phone", () => {
+  const two = { ...twilio, DEMO_WHATSAPP_TO: "919876543210, 917397313854" };
+
+  it("reads a comma-separated list of up to five plain numbers", () => {
+    expect(demoNumbers(two)).toEqual(["919876543210", "917397313854"]);
+    expect(twilioConfigured(two)).toBe(true);
+    expect(twilioConfigured({ ...twilio, DEMO_WHATSAPP_TO: "919876543210,+91 73973" })).toBe(false);
+    expect(twilioConfigured({ ...twilio, DEMO_WHATSAPP_TO: "1111111111,2222222222,3333333333,4444444444,5555555555,6666666666" })).toBe(false);
+  });
+
+  it("sends to every phone, and one failing does not stop the other", async () => {
+    const calls: string[] = [];
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const to = new URLSearchParams(init!.body as string).get("To")!;
+      calls.push(to);
+      return new Response("{}", { status: to.endsWith("3210") ? 400 : 200 });
+    });
+    const result = await relayToWhatsApp("hi", two, fetchImpl as unknown as typeof fetch);
+    expect(calls.sort()).toEqual(["whatsapp:+917397313854", "whatsapp:+919876543210"]);
+    expect(result.sent).toBe(true);
   });
 });
