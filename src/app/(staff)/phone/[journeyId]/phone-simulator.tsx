@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, BadgeCheck, CheckCheck, ExternalLink, Mic, MoreVertical, Paperclip, Search, Signal, Smile, UserRound, Wifi } from "lucide-react";
+import { ArrowLeft, BadgeCheck, CheckCheck, ExternalLink, HeartPulse, Mic, MoreVertical, Paperclip, Search, Signal, Smile, Wifi } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useRef, useState } from "react";
 
@@ -87,18 +87,18 @@ export function PhoneSimulator({ patientName, messages }: { patientName: string;
           <>
             <div className="flex items-center gap-2 bg-white px-3 py-2 shadow-sm">
               <ArrowLeft className="size-5 shrink-0 text-[#111b21]" aria-hidden="true" />
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#fcd0d6] text-[#d0103a]" aria-hidden="true">
-                <UserRound className="size-5" />
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground" aria-hidden="true">
+                <HeartPulse className="size-5" strokeWidth={2.4} />
               </span>
               <div className="min-w-0 flex-1 leading-tight">
                 <p className="flex items-center gap-1 truncate text-[15px] font-semibold text-[#111b21]">
                   Livacare
                   <BadgeCheck className="size-4 shrink-0 text-[#00a884]" aria-hidden="true" />
                 </p>
-                <p className="truncate text-xs text-[#667781]">Business Account</p>
+                <p className="truncate text-xs text-[#54656f]">Business Account</p>
               </div>
-              <Search className="size-5 shrink-0 text-[#667781]" aria-hidden="true" />
-              <MoreVertical className="size-5 shrink-0 text-[#667781]" aria-hidden="true" />
+              <Search className="size-5 shrink-0 text-[#54656f]" aria-hidden="true" />
+              <MoreVertical className="size-5 shrink-0 text-[#54656f]" aria-hidden="true" />
             </div>
 
             <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto bg-[#efeae2] px-3 py-3" style={{ backgroundImage: WHATSAPP_DOODLE }} aria-live="polite">
@@ -106,7 +106,7 @@ export function PhoneSimulator({ patientName, messages }: { patientName: string;
               <p className="mx-auto mb-2 max-w-[92%] rounded-lg bg-[#cdeeee] px-3 py-2 text-center text-xs leading-snug text-[#54656f]">
                 This business uses a secure service from Meta to manage this chat. Click to learn more.
               </p>
-              {messages.length === 0 && <p className="m-auto text-center text-sm text-[#667781]">No messages yet.</p>}
+              {messages.length === 0 && <p className="m-auto text-center text-sm text-[#54656f]">No messages yet.</p>}
               {messages.map((m) => (
                 <article
                   key={m.id}
@@ -128,7 +128,7 @@ export function PhoneSimulator({ patientName, messages }: { patientName: string;
                             <span className="block bg-[#e1e6ea] px-2.5 py-3 text-xs font-semibold text-[#111b21]">Liv2care</span>
                             <span className="block px-2.5 py-1.5">
                               <span className="block text-[13px] font-semibold text-[#111b21]">{progress ? "Your progress" : "Your liver care journey"}</span>
-                              <span className="block text-xs text-[#667781]">liv2care.vercel.app</span>
+                              <span className="block text-xs text-[#54656f]">liv2care.vercel.app</span>
                             </span>
                           </button>
                           <span className="block break-all text-[#0a6fa3] underline">{shown(part)}</span>
@@ -141,7 +141,7 @@ export function PhoneSimulator({ patientName, messages }: { patientName: string;
                       </span>
                     );
                   })}
-                  <span className="float-right ml-3 mt-1 flex items-center gap-1 text-[11px] text-[#667781]">
+                  <span className="float-right ml-3 mt-1 flex items-center gap-1 text-[11px] text-[#54656f]">
                     {clock(m.created_at)}
                     <CheckCheck className="size-3.5 text-[#53bdeb]" aria-hidden="true" />
                   </span>
