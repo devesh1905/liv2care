@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { relayToWhatsApp, whatsappConfigured } from "./whatsapp";
+import { relayToWhatsApp, twilioConfigured, whatsappConfigured } from "./whatsapp";
 
 const env = { WHATSAPP_PHONE_NUMBER_ID: "1234567890", WHATSAPP_ACCESS_TOKEN: "secret-token", DEMO_WHATSAPP_TO: "919876543210" };
 const ok = () => Promise.resolve(new Response("{}", { status: 200 }));
@@ -39,8 +39,39 @@ describe("relayToWhatsApp", () => {
 
   it("never throws, and never repeats the token in its answer", async () => {
     const result = await relayToWhatsApp("hi", env, () => Promise.reject(new Error("network down secret-token")));
-    expect(result).toEqual({ sent: false, reason: "could not reach Meta" });
+    expect(result).toEqual({ sent: false, reason: "could not reach the WhatsApp service" });
     expect(JSON.stringify(result)).not.toContain("secret-token");
     expect(await relayToWhatsApp("hi", env, refused)).toMatchObject({ sent: false });
+  });
+});
+
+const twilio = { TWILIO_ACCOUNT_SID: "ACtest", TWILIO_AUTH_TOKEN: "twilio-secret", TWILIO_WHATSAPP_FROM: "whatsapp:+14155238886", DEMO_WHATSAPP_TO: "919876543210" };
+
+describe("Twilio sandbox", () => {
+  it("is configured with an account, a token, the sandbox sender and a plain number", () => {
+    expect(twilioConfigured(twilio)).toBe(true);
+    expect(whatsappConfigured(twilio)).toBe(true);
+    expect(twilioConfigured({ ...twilio, TWILIO_WHATSAPP_FROM: "+14155238886" })).toBe(false);
+    expect(twilioConfigured({ ...twilio, TWILIO_AUTH_TOKEN: "" })).toBe(false);
+  });
+
+  it("sends the text to the demo phone and is used before Meta", async () => {
+    const fetchImpl = vi.fn(ok);
+    expect(await relayToWhatsApp("Tap to book: https://example.test/book/abc", { ...env, ...twilio }, fetchImpl)).toEqual({ sent: true });
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://api.twilio.com/2010-04-01/Accounts/ACtest/Messages.json");
+    expect((init.headers as Record<string, string>).authorization).toBe(`Basic ${Buffer.from("ACtest:twilio-secret").toString("base64")}`);
+    const form = new URLSearchParams(init.body as string);
+    expect(form.get("From")).toBe("whatsapp:+14155238886");
+    expect(form.get("To")).toBe("whatsapp:+919876543210");
+    expect(form.get("Body")).toBe("Tap to book: https://example.test/book/abc");
+  });
+
+  it("says why when Twilio refuses, without repeating the token", async () => {
+    const result = await relayToWhatsApp("hi", twilio, refused);
+    expect(result.sent).toBe(false);
+    expect(result.reason).toContain("sandbox");
+    expect(JSON.stringify(result)).not.toContain("twilio-secret");
+    expect((await relayToWhatsApp("hi", twilio, () => Promise.reject(new Error("down twilio-secret")))).sent).toBe(false);
   });
 });

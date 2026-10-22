@@ -1,4 +1,17 @@
-# Real WhatsApp messages for the demo (Meta test number)
+# Real WhatsApp messages for the demo
+
+Two senders are supported. **Twilio's WhatsApp Sandbox** works today, with no business verification, and is used first when its settings are present. **Meta's Cloud API test number** only works once Meta has verified the business (until then Meta answers "Business Account locked").
+
+## Twilio WhatsApp Sandbox (recommended for the demo)
+
+1. Sign in at console.twilio.com (a free trial account is enough).
+2. Open **Messaging > Try it out > Send a WhatsApp message**. Twilio shows the sandbox number (for example +1 415 523 8886) and a join phrase (for example `join something-word`).
+3. On the demo phone, send that join phrase to the sandbox number on WhatsApp. Twilio replies that the phone is connected.
+4. Settings in Vercel (then redeploy): `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` (secret, from the console's front page), `TWILIO_WHATSAPP_FROM` (`whatsapp:` plus the sandbox number, for example `whatsapp:+14155238886`), and `DEMO_WHATSAPP_TO` (the demo phone, country code first, digits only).
+5. WhatsApp allows free text for 24 hours after the demo phone last messaged the sandbox number, so send any message ("Hi") before each demo.
+
+## Meta test number (needs a verified business)
+
 
 Every message the app sends is also delivered to **one demo phone** as a real WhatsApp message. Patients are never contacted, because the app keeps only the last 4 digits of a number. The message log and the patient's-phone view keep working as before.
 
