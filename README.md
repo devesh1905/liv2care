@@ -79,6 +79,10 @@ e2e/                     Playwright tests
 scripts/                 screenshots and sample report files
 ```
 
+## Connecting to an EMR (for example CARE)
+
+Liv2care is EHR-independent on purpose: it runs beside any clinic's records and replaces none of them, so no integration is needed to use it. Where a clinic already runs an open-source EMR such as [CARE](https://ohc.network/build-on-care) (Open Healthcare Network), a CARE plugin could show each patient's Liv2care pathway status inside CARE, and CARE could hand over the patient and the existing report. CARE plugins are a Django backend and a React front end loaded into CARE (see the [plugin documentation](https://docs.ohc.network/contributing/plugins/)). This is a planned next step and is not built.
+
 ## Security and privacy
 
 The plain-language summary for reviewers is in [docs/security-and-privacy.md](docs/security-and-privacy.md). A three-minute walk through the demo is in [docs/demo-walkthrough.md](docs/demo-walkthrough.md). To check a deployed site without any password: `node scripts/check-live.mjs <folder> <site-url>`.
