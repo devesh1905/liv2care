@@ -3,6 +3,8 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth/session";
+import { encryptionReady, maskPhone, normalisePhone } from "@/lib/contacts/phone";
+import { saveContact } from "@/lib/contacts/store";
 import { startJourney } from "@/lib/journey/start";
 import { issueProgressLink } from "@/lib/booking/links";
 import { sendBookingLink } from "@/lib/booking/notify";
@@ -31,14 +33,18 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
 
   const name = String(form.get("name") ?? "").trim();
   const age = Number(form.get("age"));
-  const last4 = String(form.get("phone") ?? "").trim();
+  const phoneText = String(form.get("phone") ?? "").trim();
   const language = form.get("language") === "hi" ? "hi" : "en";
   const route = form.get("route") === "existing_report" ? "existing_report" : "order_tests";
   const ultrasound = route === "order_tests" && form.get("ultrasound") === "on";
 
   if (!name || name.length > 80) return { error: "Enter the patient's name." };
   if (!Number.isInteger(age) || age < 18 || age > 120) return { error: "Enter an age between 18 and 120." };
-  if (last4 && !/^\d{4}$/.test(last4)) return { error: "Phone: enter the last 4 digits only, or leave it empty." };
+  const phone = phoneText ? normalisePhone(phoneText) : null;
+  if (phoneText && !phone) return { error: "Phone: enter a 10-digit mobile number (or start with + and the country code), or leave it empty." };
+  if (phone && !encryptionReady(process.env.PHONE_ENCRYPTION_KEY)) {
+    return { error: "Phone numbers cannot be kept yet: the server has no PHONE_ENCRYPTION_KEY. Leave the phone empty." };
+  }
   if (form.get("consent") !== "on") return { error: "The patient's consent is required to enrol." };
 
   const supabase = await createClient();
@@ -68,7 +74,7 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
       journeyId,
       name,
       age,
-      phoneMasked: `98•••• ${last4 || "••••"}`,
+      phoneMasked: phone ? maskPhone(phone) : "••••• ••••",
       language,
       route,
       ultrasound,
@@ -80,6 +86,9 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
     if (report) await admin.storage.from("reports").remove([report.storagePath]);
     return { error: started.error.message };
   }
+
+  // The full number is kept encrypted, only to send this patient their links, and is erased when the journey closes.
+  const kept = phone ? await saveContact(admin, journeyId, phone) : false;
 
   const { data: row } = await supabase.from("journey_status").select("patient_code").eq("journey_id", journeyId).maybeSingle();
   const code = row?.patient_code ?? "";
@@ -99,13 +108,14 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
     // The journey exists; the message log can be filled in later.
   }
 
+  const via = kept ? "to the patient's WhatsApp number" : "by WhatsApp (simulated)";
   return {
     success:
       patientSends
-        ? `${name} (${code}) enrolled. A link to upload their report was sent by WhatsApp (simulated).`
+        ? `${name} (${code}) enrolled. A link to upload their report was sent ${via}.`
         : route === "existing_report"
         ? `${name} (${code}) enrolled. The existing report is with the clinician; no repeat test needed.`
-        : `${name} (${code}) enrolled. A booking link was sent by WhatsApp (simulated).`,
+        : `${name} (${code}) enrolled. A booking link was sent ${via}.`,
     // In a demo, the message is pretend, so show the link the patient would have tapped. Never shown on a real deployment.
     patientLink: process.env.DEMO_LOGINS === "on" ? demoLink : undefined,
     phoneLink: `/phone/${journeyId}`,

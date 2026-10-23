@@ -95,9 +95,12 @@ export function EnrolForm() {
           <Field label="Age" className="sm:col-span-1">
             <Input name="age" type="number" required min={18} max={120} inputMode="numeric" defaultValue={state.typed?.age} />
           </Field>
-          <Field label="Phone, last 4 digits" hint="Optional" className="sm:col-span-2">
-            <Input name="phone" inputMode="numeric" pattern="\d{4}" maxLength={4} autoComplete="off" defaultValue={state.typed?.phone} />
+          <Field label="Patient's mobile number" hint="Optional" className="sm:col-span-2">
+            <Input name="phone" type="tel" inputMode="tel" maxLength={20} autoComplete="off" defaultValue={state.typed?.phone} />
           </Field>
+          <p className="text-xs text-muted-foreground sm:col-span-6">
+            With a number, the patient&apos;s links go to their own WhatsApp. It is kept encrypted for that only, and erased when the journey ends.
+          </p>
           <Field label="Message language" className="sm:col-span-3">
             <Select name="language" defaultValue={state.typed?.language ?? "en"}>
               <option value="en">English</option>

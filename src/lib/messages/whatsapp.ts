@@ -38,12 +38,17 @@ const validTo = (env: WhatsAppEnv) => {
   return numbers.length >= 1 && numbers.length <= 5 && numbers.every((n) => /^\d{8,15}$/.test(n));
 };
 
+const twilioSender = (env: WhatsAppEnv) =>
+  Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_WHATSAPP_FROM && /^whatsapp:\+\d{8,15}$/.test(env.TWILIO_WHATSAPP_FROM));
+
+const metaSender = (env: WhatsAppEnv) => Boolean(env.WHATSAPP_PHONE_NUMBER_ID && env.WHATSAPP_ACCESS_TOKEN);
+
 export function twilioConfigured(env: WhatsAppEnv): boolean {
-  return Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_WHATSAPP_FROM && /^whatsapp:\+\d{8,15}$/.test(env.TWILIO_WHATSAPP_FROM) && validTo(env));
+  return twilioSender(env) && validTo(env);
 }
 
 export function metaConfigured(env: WhatsAppEnv): boolean {
-  return Boolean(env.WHATSAPP_PHONE_NUMBER_ID && env.WHATSAPP_ACCESS_TOKEN && validTo(env));
+  return metaSender(env) && validTo(env);
 }
 
 /** True when a real WhatsApp sender is set up. */
@@ -79,14 +84,25 @@ async function relayViaMeta(body: string, to: string, env: WhatsAppEnv, fetchImp
   return fallback.ok ? { sent: true, reason: "template only: the demo phone has not messaged the number in the last 24 hours" } : { sent: false, reason: `Meta answered ${text.status}` };
 }
 
-/** Sends the message text to the demo phone. Never throws: a failed relay must not break the booking flow. */
-export async function relayToWhatsApp(body: string, env: WhatsAppEnv = process.env as WhatsAppEnv, fetchImpl: typeof fetch = fetch): Promise<WhatsAppResult> {
-  if (!whatsappConfigured(env)) return { sent: false, reason: "not configured" };
-  // every demo phone gets the message; one phone failing (for example, it has not joined yet) does not stop the others
+/**
+ * Sends the message text to the patient's own number when one is given (digits, country code first), otherwise to the demo
+ * phones. Never throws: a failed relay must not break the booking flow.
+ */
+export async function relayToWhatsApp(
+  body: string,
+  env: WhatsAppEnv = process.env as WhatsAppEnv,
+  fetchImpl: typeof fetch = fetch,
+  patientNumber?: string,
+): Promise<WhatsAppResult> {
+  const own = patientNumber && /^\d{8,15}$/.test(patientNumber) ? [patientNumber] : null;
+  const ready = own ? twilioSender(env) || metaSender(env) : whatsappConfigured(env);
+  if (!ready) return { sent: false, reason: "not configured" };
+  const useTwilio = own ? twilioSender(env) : twilioConfigured(env);
+  // every phone gets the message; one phone failing (for example, it has not joined yet) does not stop the others
   const results = await Promise.all(
-    demoNumbers(env).map(async (to) => {
+    (own ?? demoNumbers(env)).map(async (to) => {
       try {
-        return twilioConfigured(env) ? await relayViaTwilio(body, to, env, fetchImpl) : await relayViaMeta(body, to, env, fetchImpl);
+        return useTwilio ? await relayViaTwilio(body, to, env, fetchImpl) : await relayViaMeta(body, to, env, fetchImpl);
       } catch {
         return { sent: false, reason: "could not reach the WhatsApp service" } as WhatsAppResult;
       }

@@ -95,7 +95,7 @@ test.describe("enrolling a patient", () => {
     const form = doctor.locator("form").filter({ has: doctor.getByLabel("Patient name", { exact: true }) });
     await form.evaluate((f) => ((f as HTMLFormElement).noValidate = true)); // let the server do the refusing
     await doctor.getByLabel("Patient name", { exact: true }).evaluate((el) => el.removeAttribute("maxlength"));
-    await doctor.getByLabel(/Phone, last 4/).evaluate((el) => el.removeAttribute("maxlength"));
+    await doctor.getByLabel(/mobile number/).evaluate((el) => el.removeAttribute("maxlength"));
     const refused = (text: string | RegExp) => expect(doctor.getByRole("alert").filter({ hasText: text })).toBeVisible();
     // wait for the server's answer and for the form to settle, so a message left from the last try cannot count
     const enrol = async () => {
@@ -126,10 +126,10 @@ test.describe("enrolling a patient", () => {
     }
 
     await doctor.getByLabel("Age", { exact: true }).fill("55");
-    await doctor.getByLabel(/Phone, last 4/).fill("12ab");
+    await doctor.getByLabel(/mobile number/).fill("12ab");
     await enrol();
-    await refused("last 4 digits");
-    await doctor.getByLabel(/Phone, last 4/).fill("");
+    await refused("10-digit mobile number");
+    await doctor.getByLabel(/mobile number/).fill("");
 
     await consent.uncheck();
     await enrol();

@@ -26,7 +26,7 @@ select is(
 
 select is(
   (select count(*)::int
-   from (values ('booking_links'), ('ai_usage')) t(name), (values ('anon'), ('authenticated')) r(role)
+   from (values ('booking_links'), ('ai_usage'), ('patient_contacts')) t(name), (values ('anon'), ('authenticated')) r(role)
    where has_table_privilege(r.role, 'public.' || t.name, 'SELECT')),
   0, 'link hashes and AI usage counters cannot be read by the browser roles at all');
 
