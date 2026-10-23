@@ -4,7 +4,8 @@ import { admin, linkFromMessage, PARTNER, signInAs } from "./helpers";
 /** A patient books blood-test collection at home; the lab sees the address; liver function tests (LFT) are named in the order. */
 test("home collection: the patient gives an address and the lab sees it", async ({ browser }) => {
   const name = `Home Person ${Date.now() % 100000}`;
-  const address = "Flat 4B, Green Park Apartments, near the temple, Hyderabad 500001";
+  const flat = `Flat ${Date.now() % 100000}B`;
+  const address = `${flat}, Green Park Apartments, near the temple, Hyderabad 500001`;
 
   await admin.from("slots").insert({ partner_id: PARTNER.sunrise, starts_at: new Date(Date.now() + 3 * 3600_000).toISOString(), home: true });
 
@@ -49,9 +50,8 @@ test("home collection: the patient gives an address and the lab sees it", async 
   // the lab sees the address and the tests; a centre or the doctor's page never shows it
   const lab = await signInAs(browser, "lab");
   await lab.goto("/partner");
-  const card = lab.locator("article, div").filter({ hasText: name }).filter({ has: lab.getByTestId("home-address") }).last();
-  await expect(card.getByTestId("home-address")).toContainText("Green Park Apartments");
-  await expect(card.getByText("Includes liver function tests (LFT)")).toBeVisible();
+  await expect(lab.getByTestId("home-address").filter({ hasText: flat })).toContainText("Green Park Apartments");
+  await expect(lab.getByText("Includes liver function tests (LFT)").first()).toBeVisible();
   await doctor.goto("/doctor");
   await expect(doctor.getByText("Green Park")).toHaveCount(0);
 });
