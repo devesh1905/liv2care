@@ -1,8 +1,9 @@
 "use client";
 
-import { CalendarCheck, Clock, MapPin, Sparkles, Sunrise } from "lucide-react";
+import { CalendarCheck, Clock, FlaskConical, House, MapPin, Sparkles, Sunrise } from "lucide-react";
 import { useActionState, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/field";
 import { formatSlot, formatSlotParts } from "@/lib/format/slot";
 import { t, type Lang } from "@/lib/i18n/patient";
 import type { Preference, SlotOption } from "@/lib/logistics/types";
@@ -15,8 +16,23 @@ const PREFS: { key: Preference; icon: typeof MapPin }[] = [
   { key: "morning", icon: Sunrise },
 ];
 
-export function BookingPicker({ token, lang, options, suggestedSlotId }: { token: string; lang: Lang; options: SlotOption[]; suggestedSlotId?: string }) {
-  const offered = options.find((o) => o.slotId === suggestedSlotId);
+export function BookingPicker({
+  token,
+  lang,
+  options: labOptions,
+  homeOptions = [],
+  suggestedSlotId,
+}: {
+  token: string;
+  lang: Lang;
+  options: SlotOption[];
+  homeOptions?: SlotOption[];
+  suggestedSlotId?: string;
+}) {
+  const offered = [...labOptions, ...homeOptions].find((o) => o.slotId === suggestedSlotId);
+  const [home, setHome] = useState((!!offered && homeOptions.some((o) => o.slotId === offered.slotId)) || (labOptions.length === 0 && homeOptions.length > 0));
+  const [address, setAddress] = useState(""); // kept in state so a refused booking does not wipe it
+  const options = home ? homeOptions : labOptions;
   const [chosen, setChosen] = useState<{ partnerId: string; slotId: string } | null>(offered ? { partnerId: offered.partnerId, slotId: offered.slotId } : null);
   const [reason, setReason] = useState<string | null>(offered ? t(lang, "suggestedForYou") : null);
   const [pending, startTransition] = useTransition();
@@ -29,7 +45,7 @@ export function BookingPicker({ token, lang, options, suggestedSlotId }: { token
   function ask(pref: Preference) {
     setAsking(pref);
     startTransition(async () => {
-      const s = await suggestSlot(token, pref, lang);
+      const s = await suggestSlot(token, pref, lang, home);
       if (s) {
         setChosen({ partnerId: s.partnerId, slotId: s.slotId });
         setReason(s.reason);
@@ -37,7 +53,14 @@ export function BookingPicker({ token, lang, options, suggestedSlotId }: { token
     });
   }
 
-  if (options.length === 0) {
+  function chooseWhere(toHome: boolean) {
+    if (toHome === home) return;
+    setHome(toHome);
+    setChosen(null);
+    setReason(null);
+  }
+
+  if (labOptions.length === 0 && homeOptions.length === 0) {
     return <p className="rounded-xl border border-dashed bg-card p-6 text-center text-muted-foreground">{t(lang, "noSlots")}</p>;
   }
 
@@ -47,6 +70,31 @@ export function BookingPicker({ token, lang, options, suggestedSlotId }: { token
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="partnerId" value={chosen?.partnerId ?? ""} />
       <input type="hidden" name="slotId" value={chosen?.slotId ?? ""} />
+
+      {homeOptions.length > 0 && (
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 font-heading text-lg font-extrabold">{t(lang, "whereTitle")}</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { toHome: false, label: t(lang, "atLab"), Icon: FlaskConical },
+              { toHome: true, label: t(lang, "atHome"), Icon: House },
+            ].map(({ toHome, label, Icon }) => (
+              <label
+                key={label}
+                className={cn(
+                  "flex min-h-14 cursor-pointer items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors has-focus-visible:ring-3 has-focus-visible:ring-ring/40",
+                  home === toHome ? "border-primary bg-primary text-primary-foreground shadow-sm" : "bg-background hover:bg-muted",
+                )}
+              >
+                <input type="radio" name="where" className="sr-only" checked={home === toHome} onChange={() => chooseWhere(toHome)} />
+                <Icon className="size-5" aria-hidden="true" />
+                {label}
+              </label>
+            ))}
+          </div>
+          {home && <p className="text-sm text-muted-foreground">{t(lang, "homeNote")}</p>}
+        </fieldset>
+      )}
 
       <section aria-labelledby="helper" className="flex flex-col gap-3 rounded-2xl bg-secondary/70 p-4">
         <h2 id="helper" className="flex items-center gap-2 text-sm font-bold text-primary">
@@ -113,6 +161,14 @@ export function BookingPicker({ token, lang, options, suggestedSlotId }: { token
           </div>
         ))}
       </fieldset>
+
+      {home && (
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-semibold">{t(lang, "addressLabel")}</span>
+          <Textarea name="address" required minLength={10} maxLength={300} rows={3} autoComplete="street-address" value={address} onChange={(e) => setAddress(e.target.value)} />
+          <span className="text-xs text-muted-foreground">{t(lang, "addressHint")}</span>
+        </label>
+      )}
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">

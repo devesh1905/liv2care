@@ -8,6 +8,9 @@ import type { Lang } from "@/lib/i18n/patient";
 import { mockProvider } from "@/lib/messages/provider";
 import { templatesFor } from "@/lib/messages/templates";
 import { formatSlot } from "@/lib/format/slot";
+import { cleanAddress } from "@/lib/contacts/address";
+import { encryptionReady } from "@/lib/contacts/phone";
+import { saveAddress } from "@/lib/contacts/store";
 import { resolveBookingLink } from "./links";
 
 const PATIENT = { id: "booking-link", role: "patient" } as const;
@@ -52,23 +55,35 @@ export async function loadBookingContext(admin: SupabaseClient, token: string): 
 
 export type BookResult =
   | { ok: true; partnerName: string; slotLabel: string }
-  | { ok: false; code: "invalid_link" | "not_bookable" | "slot_unavailable" | "failed"; message: string };
+  | { ok: false; code: "invalid_link" | "not_bookable" | "slot_unavailable" | "address_needed" | "failed"; message: string };
 
-/** Books (or reschedules) a slot for the journey behind a link. All stage changes go through transition(). */
-export async function bookForLink(admin: SupabaseClient, token: string, partnerId: string, slotId: string): Promise<BookResult> {
+const HOME_LABEL = { en: "Home collection", hi: "घर पर सैंपल" } as const;
+
+/**
+ * Books (or reschedules) a slot for the journey behind a link. All stage changes go through transition().
+ * A home-collection slot also needs the patient's address, which is kept encrypted for the lab.
+ */
+export async function bookForLink(admin: SupabaseClient, token: string, partnerId: string, slotId: string, address?: string): Promise<BookResult> {
   const ctx = await loadBookingContext(admin, token);
   if (!ctx) return { ok: false, code: "invalid_link", message: "This link is no longer valid." };
   if (!ctx.bookable) return { ok: false, code: "not_bookable", message: "There is nothing to book right now." };
 
   const [{ data: partner }, { data: slot }] = await Promise.all([
     admin.from("partners").select("id, name, kind").eq("id", partnerId).maybeSingle(),
-    admin.from("slots").select("id, partner_id, starts_at, taken").eq("id", slotId).maybeSingle(),
+    admin.from("slots").select("id, partner_id, starts_at, taken, home").eq("id", slotId).maybeSingle(),
   ]);
   const usable =
     partner && slot && partner.kind === ctx.kind && slot.partner_id === partner.id && !slot.taken && new Date(slot.starts_at) > new Date();
   if (!usable) return { ok: false, code: "slot_unavailable", message: "That time is not available." };
 
-  const slotLabel = formatSlot(slot.starts_at);
+  const home = slot.home === true;
+  if (home && ctx.kind !== "lab") return { ok: false, code: "slot_unavailable", message: "That time is not available." };
+  const homeAddress = home ? cleanAddress(address) : null;
+  if (home && !homeAddress) return { ok: false, code: "address_needed", message: "Enter the full address." };
+  if (home && !encryptionReady(process.env.PHONE_ENCRYPTION_KEY)) return { ok: false, code: "failed", message: "Home visits are not set up on this server." };
+
+  const when = formatSlot(slot.starts_at);
+  const slotLabel = home ? `${HOME_LABEL[ctx.patient.language]}, ${when}` : when;
   const result = await transition(
     supabaseJourneyStore(admin),
     ctx.journeyId,
@@ -80,6 +95,19 @@ export async function bookForLink(admin: SupabaseClient, token: string, partnerI
   if (!result.ok) {
     const taken = result.error.code === "invalid_payload";
     return { ok: false, code: taken ? "slot_unavailable" : "failed", message: result.error.message };
+  }
+
+  if (homeAddress) {
+    const { data: booked } = await admin
+      .from("bookings")
+      .select("id")
+      .eq("journey_id", ctx.journeyId)
+      .eq("slot_id", slot.id)
+      .eq("status", "booked")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (booked) await saveAddress(admin, booked.id, homeAddress);
   }
 
   await mockProvider(admin)

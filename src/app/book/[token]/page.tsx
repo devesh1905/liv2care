@@ -93,7 +93,7 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
               </h2>
             </div>
             {view.reschedule && <p className="rounded-2xl bg-warn-soft p-4 font-semibold text-warn">{t(lang, "resched")}</p>}
-            <BookingPicker token={token} lang={lang} options={view.options} suggestedSlotId={view.suggestedSlotId} />
+            <BookingPicker token={token} lang={lang} options={view.options} homeOptions={view.homeOptions} suggestedSlotId={view.suggestedSlotId} />
           </>
         )}
       </main>
