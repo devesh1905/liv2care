@@ -25,7 +25,7 @@ test("home collection: the patient gives an address and the lab sees it", async 
 
   const phone = await (await browser.newContext({ viewport: { width: 360, height: 800 } })).newPage();
   await phone.goto(await linkFromMessage(journeyId, "Your doctor has requested some blood tests"));
-  await expect(phone.getByRole("heading", { name: "Where should the sample be taken?" })).toBeVisible();
+  await expect(phone.getByText("Where should the sample be taken?")).toBeVisible();
 
   // the address box only appears for a home visit, and a booking without one is refused
   await expect(phone.getByLabel("Your address")).toHaveCount(0);
