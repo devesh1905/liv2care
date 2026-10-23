@@ -31,29 +31,36 @@ export function encryptionReady(base64: string | undefined): boolean {
   return keyFrom(base64) !== null;
 }
 
-/** AES-256-GCM. The patient's id is bound in, so a stored value cannot be moved to another patient. */
-export function encryptPhone(digits: string, base64Key: string | undefined, patientId: string): string | null {
+/** AES-256-GCM. The owner's id is bound in, so a stored value cannot be moved to another record. */
+export function encryptText(text: string, base64Key: string | undefined, ownerId: string): string | null {
   const key = keyFrom(base64Key);
   if (!key) return null;
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
-  cipher.setAAD(Buffer.from(patientId));
-  const body = Buffer.concat([cipher.update(digits, "utf8"), cipher.final()]);
+  cipher.setAAD(Buffer.from(ownerId));
+  const body = Buffer.concat([cipher.update(text, "utf8"), cipher.final()]);
   return ["v1", iv.toString("base64url"), cipher.getAuthTag().toString("base64url"), body.toString("base64url")].join(".");
 }
 
-/** Returns the digits, or null when the key is missing or wrong, or the value was changed. Never throws. */
-export function decryptPhone(stored: string, base64Key: string | undefined, patientId: string): string | null {
+/** Returns the text, or null when the key is missing or wrong, or the value was changed. Never throws. */
+export function decryptText(stored: string, base64Key: string | undefined, ownerId: string): string | null {
   try {
     const key = keyFrom(base64Key);
     const [version, iv, tag, body] = stored.split(".");
     if (!key || version !== "v1" || !iv || !tag || !body) return null;
     const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "base64url"));
-    decipher.setAAD(Buffer.from(patientId));
+    decipher.setAAD(Buffer.from(ownerId));
     decipher.setAuthTag(Buffer.from(tag, "base64url"));
-    const digits = Buffer.concat([decipher.update(Buffer.from(body, "base64url")), decipher.final()]).toString("utf8");
-    return /^\d{8,15}$/.test(digits) ? digits : null;
+    return Buffer.concat([decipher.update(Buffer.from(body, "base64url")), decipher.final()]).toString("utf8");
   } catch {
     return null;
   }
+}
+
+export const encryptPhone = encryptText;
+
+/** The phone digits, or null when the value cannot be read or is not a number. */
+export function decryptPhone(stored: string, base64Key: string | undefined, patientId: string): string | null {
+  const digits = decryptText(stored, base64Key, patientId);
+  return digits !== null && /^\d{8,15}$/.test(digits) ? digits : null;
 }

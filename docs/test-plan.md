@@ -71,6 +71,8 @@ The live click-through is done by a person because signing in to the hosted site
 38. Security headers on every page; only the patient pages may be framed, and only by this site.
 39. The reminder job refuses a missing or wrong secret.
 40. A patient's mobile number is stored encrypted, shown only masked, refused when it cannot be a mobile number, and erased when the journey is completed or not approved (database test).
+41. Home collection: a lab opens a home slot; the patient chooses "At my home", must give an address, books; the lab sees the address and phone on that visit only; the address is stored encrypted and erased when the journey closes.
+42. LFT: the doctor's order message names liver function tests when ticked, and the lab sees it on the visit.
 
 ## Live click-through (a person, on the Vercel site)
 

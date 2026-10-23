@@ -2,8 +2,8 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PartnerKind, SlotOption } from "@/lib/logistics/types";
 
-/** Open future slots at partners of one kind, up to `perPartner` each. Logistics data only. */
-export async function loadSlotOptions(admin: SupabaseClient, kind: PartnerKind, perPartner = 6): Promise<SlotOption[]> {
+/** Open future slots at partners of one kind, up to `perPartner` each. `home` picks home-collection slots instead of visits. Logistics data only. */
+export async function loadSlotOptions(admin: SupabaseClient, kind: PartnerKind, perPartner = 6, home = false): Promise<SlotOption[]> {
   const { data: partners, error } = await admin.from("partners").select("id, name, area, distance_km").eq("kind", kind).order("distance_km");
   if (error) throw error;
 
@@ -15,6 +15,7 @@ export async function loadSlotOptions(admin: SupabaseClient, kind: PartnerKind, 
         .select("id, starts_at")
         .eq("partner_id", p.id)
         .eq("taken", false)
+        .eq("home", home)
         .gt("starts_at", nowIso)
         .order("starts_at")
         .limit(perPartner);

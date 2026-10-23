@@ -6,8 +6,8 @@
 export type MessageLang = "en" | "hi";
 
 const en = {
-  testsOrdered: (url: string, ultrasound: boolean, progress?: string) =>
-    `Your doctor has requested some blood tests${ultrasound ? " and an ultrasound" : ""}. Tap to book an appointment at a nearby lab: ${url}${progress ? `\nTrack your progress: ${progress}` : ""}`,
+  testsOrdered: (url: string, ultrasound: boolean, progress?: string, lft = false) =>
+    `Your doctor has requested some blood tests${lft ? " (including liver function tests)" : ""}${ultrasound ? " and an ultrasound" : ""}. Tap to book a visit to a nearby lab, or a home collection: ${url}${progress ? `\nTrack your progress: ${progress}` : ""}`,
   fibroscanApproved: (url: string) => `Your doctor has recommended a FibroScan. Tap to book at a nearby diagnostic centre: ${url}`,
   furtherEvaluation: (url: string) => `Your doctor has ordered an additional investigation. Tap to book: ${url}`,
   specialistReferral: (url: string) => `Your doctor has referred you to a specialist. Tap to book: ${url}`,
@@ -29,8 +29,8 @@ Track your progress: ${progress}` : ""}`,
 export type Templates = typeof en;
 
 const hi: Templates = {
-  testsOrdered: (url, ultrasound, progress) =>
-    `आपके डॉक्टर ने कुछ ब्लड टेस्ट${ultrasound ? " और अल्ट्रासाउंड" : ""} कराने को कहा है। पास की लैब में अपॉइंटमेंट बुक करने के लिए यहाँ टैप करें: ${url}${progress ? `\nअपनी प्रगति देखें: ${progress}` : ""}`,
+  testsOrdered: (url, ultrasound, progress, lft = false) =>
+    `आपके डॉक्टर ने कुछ ब्लड टेस्ट${lft ? " (लिवर फंक्शन टेस्ट सहित)" : ""}${ultrasound ? " और अल्ट्रासाउंड" : ""} कराने को कहा है। पास की लैब में अपॉइंटमेंट बुक करने या घर पर सैंपल देने के लिए यहाँ टैप करें: ${url}${progress ? `\nअपनी प्रगति देखें: ${progress}` : ""}`,
   fibroscanApproved: (url) => `आपके डॉक्टर ने फाइब्रोस्कैन की सलाह दी है। पास के डायग्नोस्टिक सेंटर में बुक करने के लिए यहाँ टैप करें: ${url}`,
   furtherEvaluation: (url) => `आपके डॉक्टर ने एक अतिरिक्त जाँच कराने को कहा है। बुक करने के लिए यहाँ टैप करें: ${url}`,
   specialistReferral: (url) => `आपके डॉक्टर ने आपको विशेषज्ञ के पास भेजा है। बुक करने के लिए यहाँ टैप करें: ${url}`,

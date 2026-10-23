@@ -37,6 +37,7 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
   const language = form.get("language") === "hi" ? "hi" : "en";
   const route = form.get("route") === "existing_report" ? "existing_report" : "order_tests";
   const ultrasound = route === "order_tests" && form.get("ultrasound") === "on";
+  const lft = route === "order_tests" && form.get("lft") === "on";
 
   if (!name || name.length > 80) return { error: "Enter the patient's name." };
   if (!Number.isInteger(age) || age < 18 || age > 120) return { error: "Enter an age between 18 and 120." };
@@ -87,6 +88,9 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
     return { error: started.error.message };
   }
 
+  // Remember whether liver function tests (LFT) were ordered, so the lab can see it on the visit.
+  if (lft) await admin.from("journeys").update({ lft: true }).eq("id", journeyId);
+
   // The full number is kept encrypted, only to send this patient their links, and is erased when the journey closes.
   const kept = phone ? await saveContact(admin, journeyId, phone) : false;
 
@@ -102,7 +106,7 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
       await mockProvider(admin).send({ journeyId, channel: "WhatsApp", body: templatesFor(language).existingReportUsed(progress) });
       demoLink = progress; // nothing for the patient to book yet, so the demo link shows their progress
     } else {
-      demoLink = await sendBookingLink(admin, journeyId, (url, m) => m.testsOrdered(url, ultrasound, progress));
+      demoLink = await sendBookingLink(admin, journeyId, (url, m) => m.testsOrdered(url, ultrasound, progress, lft));
     }
   } catch {
     // The journey exists; the message log can be filled in later.

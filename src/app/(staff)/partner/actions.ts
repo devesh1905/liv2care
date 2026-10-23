@@ -104,10 +104,13 @@ export async function addSlot(_prev: PartnerState, form: FormData): Promise<Part
   if (!user.partnerId || !when) return { error: "Choose a date and time." };
   if (when.getTime() < Date.now()) return { error: "Choose a time in the future." };
 
+  // Only a lab can send a collector to a patient's home.
+  const home = user.role === "lab" && form.get("home") === "on";
+
   const supabase = await createClient();
-  const { error } = await supabase.from("slots").insert({ partner_id: user.partnerId, starts_at: when.toISOString() });
+  const { error } = await supabase.from("slots").insert({ partner_id: user.partnerId, starts_at: when.toISOString(), home });
   if (error) return { error: error.code === "23505" ? "That slot already exists." : "The slot could not be added." };
-  return { success: "Slot added." };
+  return { success: home ? "Home visit slot added." : "Slot added." };
 }
 
 export async function removeSlot(_prev: PartnerState, form: FormData): Promise<PartnerState> {
