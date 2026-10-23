@@ -13,7 +13,14 @@ Two senders are supported. **Twilio's WhatsApp Sandbox** works today, with no bu
 ## Meta test number (needs a verified business)
 
 
-Every message the app sends is also delivered to **one demo phone** as a real WhatsApp message. Patients are never contacted, because the app keeps only the last 4 digits of a number. The message log and the patient's-phone view keep working as before.
+Every message the app sends is also delivered as a real WhatsApp message. If the doctor typed the patient's mobile number when enrolling, the message goes to that number; otherwise it goes to the demo phone(s). The message log and the patient's-phone view keep working as before.
+
+## The patient's number (needs `PHONE_ENCRYPTION_KEY`)
+
+- The doctor types the number in the enrol form (optional). It is stored encrypted (AES-256-GCM) in `patient_contacts`, which only the server can read, and the database erases it as soon as the journey is completed or not approved. The rest of the app only ever shows a masked number such as `98•••• 3210`.
+- Set `PHONE_ENCRYPTION_KEY` in Vercel first: 32 random bytes, base64 (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`). Without it the enrol form refuses a number. Keep a copy of the key somewhere safe; if it is lost, stored numbers cannot be read.
+- With the Twilio **sandbox**, a patient's phone only receives messages after joining the sandbox, so for the demo type the number of someone who has joined (for example your own). A real pilot needs an approved WhatsApp business sender and approved message templates (free text only works for 24 hours after the patient last wrote to us); that is the paid, verified setup.
+- The consent wording does not yet mention keeping the number; the clinical and legal reviewers should confirm it (queued in `waiting-on-people.md`).
 
 ## One-time setup (about 30 minutes)
 

@@ -32,7 +32,7 @@ The live click-through is done by a person because signing in to the hosted site
 11. A booking link for a journey that is waiting for an upload: the upload page, not the slot picker.
 
 ### Enrolling a patient
-12. Empty name, name of 81 characters, age 17 and 121, age with letters, phone with letters or more than 4 digits.
+12. Empty name, name of 81 characters, age 17 and 121, age with letters, phone with letters, too few digits or a number that is not a mobile number.
 13. Consent not ticked (also with the form sent without the browser).
 14. A name containing script tags or HTML: shown as plain text everywhere.
 15. Option 1 with no file and the "patient will upload" box not ticked: refused.
@@ -70,6 +70,7 @@ The live click-through is done by a person because signing in to the hosted site
 37. Automated accessibility scan of the new pages in both languages.
 38. Security headers on every page; only the patient pages may be framed, and only by this site.
 39. The reminder job refuses a missing or wrong secret.
+40. A patient's mobile number is stored encrypted, shown only masked, refused when it cannot be a mobile number, and erased when the journey is completed or not approved (database test).
 
 ## Live click-through (a person, on the Vercel site)
 

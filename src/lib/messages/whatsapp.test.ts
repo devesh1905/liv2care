@@ -98,3 +98,33 @@ describe("more than one demo phone", () => {
     expect(result.sent).toBe(true);
   });
 });
+
+describe("the patient's own number", () => {
+  it("sends to the patient and not to the demo phones", async () => {
+    const calls: string[] = [];
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      calls.push(new URLSearchParams(init!.body as string).get("To")!);
+      return new Response("{}", { status: 200 });
+    });
+    const result = await relayToWhatsApp("hi", { ...twilio, DEMO_WHATSAPP_TO: "919876543210" }, fetchImpl as unknown as typeof fetch, "917000000001");
+    expect(result.sent).toBe(true);
+    expect(calls).toEqual(["whatsapp:+917000000001"]);
+  });
+
+  it("needs only the sender settings, not demo phones", async () => {
+    const fetchImpl = vi.fn(ok);
+    const senderOnly = { ...twilio, DEMO_WHATSAPP_TO: undefined };
+    expect((await relayToWhatsApp("hi", senderOnly, fetchImpl, "917000000001")).sent).toBe(true);
+    expect((await relayToWhatsApp("hi", senderOnly, fetchImpl)).sent).toBe(false);
+  });
+
+  it("ignores a number that is not plain digits and falls back to the demo phones", async () => {
+    const calls: string[] = [];
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      calls.push(new URLSearchParams(init!.body as string).get("To")!);
+      return new Response("{}", { status: 200 });
+    });
+    await relayToWhatsApp("hi", twilio, fetchImpl as unknown as typeof fetch, "not-a-number");
+    expect(calls).toEqual(["whatsapp:+919876543210"]);
+  });
+});
