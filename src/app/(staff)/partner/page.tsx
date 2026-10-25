@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
+import { decodeAddress } from "@/lib/contacts/address";
 import { addressesFor, contactFor } from "@/lib/contacts/store";
 import { nextAction, statusOf } from "@/lib/journey/derived";
 import { visitActions } from "@/lib/journey/partnerActions";
@@ -135,8 +136,13 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
                       Home visit: collect the sample at the patient&apos;s address
                     </p>
                     <p className="whitespace-pre-line" data-testid="home-address">
-                      {addresses.get(v.id) ?? "The address could not be read. Call the patient to confirm it."}
+                      {addresses.has(v.id) ? decodeAddress(addresses.get(v.id)!).text : "The address could not be read. Call the patient to confirm it."}
                     </p>
+                    {addresses.has(v.id) && decodeAddress(addresses.get(v.id)!).mapUrl && (
+                      <a href={decodeAddress(addresses.get(v.id)!).mapUrl!} target="_blank" rel="noopener noreferrer" className="w-fit font-semibold text-primary underline underline-offset-4">
+                        Open the pin in Maps
+                      </a>
+                    )}
                     {phones.get(v.id) && <p>Phone: +{phones.get(v.id)}</p>}
                   </div>
                 )}

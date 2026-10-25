@@ -3,12 +3,12 @@
 import { CalendarCheck, Clock, FlaskConical, House, MapPin, Sparkles, Sunrise } from "lucide-react";
 import { useActionState, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/field";
 import { formatSlot, formatSlotParts } from "@/lib/format/slot";
 import { t, type Lang } from "@/lib/i18n/patient";
 import type { Preference, SlotOption } from "@/lib/logistics/types";
 import { cn } from "@/lib/utils";
 import { bookSlot, suggestSlot, type BookState } from "./actions";
+import { AddressPicker } from "./address-picker";
 
 const PREFS: { key: Preference; icon: typeof MapPin }[] = [
   { key: "nearest", icon: MapPin },
@@ -31,7 +31,6 @@ export function BookingPicker({
 }) {
   const offered = [...labOptions, ...homeOptions].find((o) => o.slotId === suggestedSlotId);
   const [home, setHome] = useState((!!offered && homeOptions.some((o) => o.slotId === offered.slotId)) || (labOptions.length === 0 && homeOptions.length > 0));
-  const [address, setAddress] = useState(""); // kept in state so a refused booking does not wipe it
   const options = home ? homeOptions : labOptions;
   const [chosen, setChosen] = useState<{ partnerId: string; slotId: string } | null>(offered ? { partnerId: offered.partnerId, slotId: offered.slotId } : null);
   const [reason, setReason] = useState<string | null>(offered ? t(lang, "suggestedForYou") : null);
@@ -162,13 +161,7 @@ export function BookingPicker({
         ))}
       </fieldset>
 
-      {home && (
-        <label className="flex flex-col gap-1.5">
-          <span className="text-sm font-semibold">{t(lang, "addressLabel")}</span>
-          <Textarea name="address" required minLength={10} maxLength={300} rows={3} autoComplete="street-address" value={address} onChange={(e) => setAddress(e.target.value)} />
-          <span className="text-xs text-muted-foreground">{t(lang, "addressHint")}</span>
-        </label>
-      )}
+      {home && <AddressPicker lang={lang} />}
 
       <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-4 backdrop-blur">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">

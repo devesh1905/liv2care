@@ -44,7 +44,8 @@ export async function bookSlot(_prev: BookState, form: FormData): Promise<BookSt
   const slotId = String(form.get("slotId") ?? "");
   if (!partnerId || !slotId) return { error: t(lang, "pick") };
 
-  const result = await bookForLink(createAdminClient(), token, partnerId, slotId, String(form.get("address") ?? ""));
+  const address = Object.fromEntries(["house", "block", "street", "area", "landmark", "pincode", "lat", "lon"].map((k) => [k, form.get(k) ?? ""]));
+  const result = await bookForLink(createAdminClient(), token, partnerId, slotId, address);
   if (result.ok) return { done: true };
   if (result.code === "address_needed") return { error: t(lang, "addressNeeded") };
   return { error: result.code === "slot_unavailable" ? t(lang, "slotTaken") : result.code === "failed" ? t(lang, "somethingWrong") : t(lang, "linkInvalid") };

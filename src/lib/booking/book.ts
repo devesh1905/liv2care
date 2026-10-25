@@ -8,7 +8,7 @@ import type { Lang } from "@/lib/i18n/patient";
 import { mockProvider } from "@/lib/messages/provider";
 import { templatesFor } from "@/lib/messages/templates";
 import { formatSlot } from "@/lib/format/slot";
-import { cleanAddress } from "@/lib/contacts/address";
+import { encodeAddress, parseAddress } from "@/lib/contacts/address";
 import { encryptionReady } from "@/lib/contacts/phone";
 import { saveAddress } from "@/lib/contacts/store";
 import { resolveBookingLink } from "./links";
@@ -63,7 +63,7 @@ const HOME_LABEL = { en: "Home collection", hi: "घर पर सैंपल" 
  * Books (or reschedules) a slot for the journey behind a link. All stage changes go through transition().
  * A home-collection slot also needs the patient's address, which is kept encrypted for the lab.
  */
-export async function bookForLink(admin: SupabaseClient, token: string, partnerId: string, slotId: string, address?: string): Promise<BookResult> {
+export async function bookForLink(admin: SupabaseClient, token: string, partnerId: string, slotId: string, address?: Record<string, unknown>): Promise<BookResult> {
   const ctx = await loadBookingContext(admin, token);
   if (!ctx) return { ok: false, code: "invalid_link", message: "This link is no longer valid." };
   if (!ctx.bookable) return { ok: false, code: "not_bookable", message: "There is nothing to book right now." };
@@ -78,7 +78,7 @@ export async function bookForLink(admin: SupabaseClient, token: string, partnerI
 
   const home = slot.home === true;
   if (home && ctx.kind !== "lab") return { ok: false, code: "slot_unavailable", message: "That time is not available." };
-  const homeAddress = home ? cleanAddress(address) : null;
+  const homeAddress = home ? parseAddress(address) : null;
   if (home && !homeAddress) return { ok: false, code: "address_needed", message: "Enter the full address." };
   if (home && !encryptionReady(process.env.PHONE_ENCRYPTION_KEY)) return { ok: false, code: "failed", message: "Home visits are not set up on this server." };
 
@@ -107,7 +107,7 @@ export async function bookForLink(admin: SupabaseClient, token: string, partnerI
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (booked) await saveAddress(admin, booked.id, homeAddress);
+    if (booked) await saveAddress(admin, booked.id, encodeAddress(homeAddress));
   }
 
   await mockProvider(admin)

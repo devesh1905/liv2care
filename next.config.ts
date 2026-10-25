@@ -15,12 +15,15 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
 ];
 
+// The patient's pages may ask for the phone's location (to drop a pin for a home visit); no other page may.
 const sameOriginFrameHeaders = securityHeaders.map((h) =>
   h.key === "X-Frame-Options"
     ? { ...h, value: "SAMEORIGIN" }
     : h.key === "Content-Security-Policy"
       ? { ...h, value: h.value.replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
-      : h,
+      : h.key === "Permissions-Policy"
+        ? { ...h, value: h.value.replace("geolocation=()", "geolocation=(self)") }
+        : h,
 );
 
 const nextConfig: NextConfig = {
