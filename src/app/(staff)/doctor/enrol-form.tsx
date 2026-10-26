@@ -48,15 +48,16 @@ export function EnrolForm() {
   const [route, setRoute] = useState<Route>("order_tests");
   const [patientUploads, setPatientUploads] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  // One key per patient being enrolled, kept until the server accepts it: if the same form reaches the server twice (a double
-  // tap, a retry), only one patient is made.
+  // One key per patient being enrolled: if the same form reaches the server twice (a double tap, a retry), only one patient
+  // is made. A second tap is queued behind the first, so the key is only replaced once the doctor starts on the next patient.
   const submissionKey = useRef<string | null>(null);
+  const enrolled = useRef(false);
   const [state, action, pending] = useActionState<EnrolState, FormData>(async (prev, data) => {
     submissionKey.current ??= crypto.randomUUID();
     data.set("submissionKey", submissionKey.current);
     const result = await enrolPatient(prev, data);
     if (result.success) {
-      submissionKey.current = null;
+      enrolled.current = true;
       formRef.current?.reset();
       setRoute("order_tests");
       setPatientUploads(false);
@@ -79,7 +80,17 @@ export function EnrolForm() {
 
   return (
     <Card aria-labelledby="enrol-title">
-      <form ref={formRef} action={action} className="flex flex-col gap-6">
+      <form
+        ref={formRef}
+        action={action}
+        onInput={() => {
+          if (enrolled.current) {
+            enrolled.current = false;
+            submissionKey.current = null;
+          }
+        }}
+        className="flex flex-col gap-6"
+      >
         {/* What is sent comes from the page's own state, never from the radio buttons: a form reset puts radios back to their
             first choice, which would quietly turn Option 1 into Option 2. */}
         <input type="hidden" name="route" value={route} />
