@@ -50,7 +50,10 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
 
   const supabase = await createClient();
   const admin = createAdminClient();
-  const journeyId = randomUUID();
+  // The form sends a fresh key for each new patient. Using it as the journey id means the same form sent twice (a double tap,
+  // a retry on a slow connection) starts one journey, not two.
+  const submissionKey = String(form.get("submissionKey") ?? "");
+  const journeyId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(submissionKey) ? submissionKey : randomUUID();
 
   // Option 1: the doctor attaches the report now (a PDF, or a photo that is turned into a PDF), or asks the patient to send it.
   const patientSends = route === "existing_report" && form.get("patientUploads") === "on";
@@ -85,6 +88,7 @@ export async function enrolPatient(_prev: EnrolState, form: FormData): Promise<E
   );
   if (!started.ok) {
     if (report) await admin.storage.from("reports").remove([report.storagePath]);
+    if (started.error.code === "duplicate") return { success: `${name} was already enrolled. Nothing was sent twice.`, phoneLink: `/phone/${journeyId}` };
     return { error: started.error.message };
   }
 

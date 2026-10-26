@@ -1,3 +1,4 @@
+import { PageSkeleton } from "@/components/skeleton";
 import { CalendarCheck, Check, CircleAlert, Languages } from "lucide-react";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -131,7 +132,13 @@ async function Content({ params, searchParams }: Pick<PageProps<"/patient/[token
 
 export default function Page(props: PageProps<"/patient/[token]">) {
   return (
-    <Suspense fallback={<p role="status" className="p-8 text-muted-foreground">Loading…</p>}>
+    <Suspense
+      fallback={
+        <main className="mx-auto w-full max-w-2xl px-4 py-6">
+          <PageSkeleton cards={1} />
+        </main>
+      }
+    >
       <Content params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );

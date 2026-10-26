@@ -48,9 +48,15 @@ export function EnrolForm() {
   const [route, setRoute] = useState<Route>("order_tests");
   const [patientUploads, setPatientUploads] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  // One key per patient being enrolled, kept until the server accepts it: if the same form reaches the server twice (a double
+  // tap, a retry), only one patient is made.
+  const submissionKey = useRef<string | null>(null);
   const [state, action, pending] = useActionState<EnrolState, FormData>(async (prev, data) => {
+    submissionKey.current ??= crypto.randomUUID();
+    data.set("submissionKey", submissionKey.current);
     const result = await enrolPatient(prev, data);
     if (result.success) {
+      submissionKey.current = null;
       formRef.current?.reset();
       setRoute("order_tests");
       setPatientUploads(false);

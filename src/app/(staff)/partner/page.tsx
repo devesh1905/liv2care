@@ -3,6 +3,7 @@ import { timeUntil } from "@/lib/format/countdown";
 import { Suspense } from "react";
 import { JourneyProgress } from "@/components/journey-progress";
 import { PageHeader } from "@/components/page-header";
+import { PageSkeleton } from "@/components/skeleton";
 import { StatusPill } from "@/components/status-pill";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
@@ -201,7 +202,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
 
 export default function Page(props: PageProps<"/partner">) {
   return (
-    <Suspense fallback={<div role="status" aria-label="Loading" className="h-32 animate-pulse rounded-xl bg-muted" />}>
+    <Suspense fallback={<PageSkeleton cards={2} />}>
       <Content searchParams={props.searchParams} />
     </Suspense>
   );

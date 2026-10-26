@@ -46,7 +46,8 @@ export async function startJourney(admin: SupabaseClient, actor: Actor, input: S
     p_first_task: first ? { owner: first.who, description: first.what, hours: 24 } : null,
   });
   if (error) {
-    const code = error.code === "23514" ? "invalid_payload" : "database";
+    // 23505: this journey id was already started (the same form sent twice)
+    const code = error.code === "23514" ? "invalid_payload" : error.code === "23505" ? "duplicate" : "database";
     return { ok: false, error: { code, message: error.message } };
   }
   return { ok: true, journeyId: input.journeyId };

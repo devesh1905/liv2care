@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     "An EHR-independent, closed-loop care-coordination platform for liver-risk assessment in people with type 2 diabetes.",
 };
 
-export const viewport: Viewport = { themeColor: "#0b63b6", width: "device-width", initialScale: 1 };
+export const viewport: Viewport = { themeColor: "#0b63b6", width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
