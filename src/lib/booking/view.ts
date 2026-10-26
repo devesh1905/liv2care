@@ -12,7 +12,7 @@ export type BookingView =
   | { kind: "upload"; language: Lang; firstName: string }
   | { kind: "uploaded"; language: Lang; firstName: string }
   | { kind: "booked"; language: Lang; partnerName: string; slotLabel: string }
-  | { kind: "ready"; language: Lang; firstName: string; partnerKind: PartnerKind; reschedule: boolean; options: SlotOption[]; suggestedSlotId?: string };
+  | { kind: "ready"; language: Lang; firstName: string; partnerKind: PartnerKind; reschedule: boolean; options: SlotOption[]; homeOptions: SlotOption[]; suggestedSlotId?: string };
 
 /** What the patient sees at /book/<token>. Reads logistics data only. */
 export async function loadBookingView(token: string, pick?: string): Promise<BookingView> {
@@ -40,6 +40,8 @@ export async function loadBookingView(token: string, pick?: string): Promise<Boo
   }
 
   const options = await loadSlotOptions(admin, ctx.kind);
+  // blood tests can also be collected at the patient's home, when a lab has opened home slots
+  const homeOptions = ctx.kind === "lab" ? await loadSlotOptions(admin, "lab", 6, true) : [];
   return {
     kind: "ready",
     language: ctx.patient.language,
@@ -47,7 +49,8 @@ export async function loadBookingView(token: string, pick?: string): Promise<Boo
     partnerKind: ctx.kind,
     reschedule: ctx.event === "RESCHEDULE",
     options,
+    homeOptions,
     // a time offered in a message opens already selected, but only if it is still open
-    suggestedSlotId: pick && options.some((o) => o.slotId === pick) ? pick : undefined,
+    suggestedSlotId: pick && [...options, ...homeOptions].some((o) => o.slotId === pick) ? pick : undefined,
   };
 }

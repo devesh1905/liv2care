@@ -3,7 +3,7 @@
 import { CalendarPlus, Check, Trash2, Upload, X } from "lucide-react";
 import { useActionState, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, FormMessage, Input, Select } from "@/components/ui/field";
+import { CheckRow, Field, FormMessage, Input, Select } from "@/components/ui/field";
 import { addSlot, markAttended, markMissed, removeSlot, uploadReport, type PartnerState } from "./actions";
 
 type Action = (prev: PartnerState, form: FormData) => Promise<PartnerState>;
@@ -75,7 +75,7 @@ export const AttendedButton = ({ journeyId, waitUntil }: { journeyId: string; wa
   </ButtonForm>
 );
 
-export function AddSlotForm() {
+export function AddSlotForm({ canHome = false }: { canHome?: boolean }) {
   const ref = useRef<HTMLFormElement>(null);
   const [state, action, pending] = useActionState<PartnerState, FormData>(async (prev, data) => {
     const result = await addSlot(prev, data);
@@ -117,6 +117,7 @@ export function AddSlotForm() {
           Add slot
         </Button>
       </div>
+      {canHome && <CheckRow name="home">Home visit slot: a collector goes to the patient&apos;s address at this time</CheckRow>}
       <FormMessage error={state.error} success={state.success} />
     </form>
   );

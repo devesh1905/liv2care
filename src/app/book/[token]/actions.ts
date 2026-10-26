@@ -16,12 +16,12 @@ export type BookState = { error?: string; done?: boolean };
 const PREFERENCES: readonly Preference[] = ["nearest", "earliest", "morning"];
 
 /** The booking helper: asks the logistics layer for a place and time. It sees slots and the preference, nothing clinical. */
-export async function suggestSlot(token: string, preference: string, lang: string): Promise<Suggestion | null> {
+export async function suggestSlot(token: string, preference: string, lang: string, home = false): Promise<Suggestion | null> {
   if (!PREFERENCES.includes(preference as Preference)) return null;
   const admin = createAdminClient();
   const ctx = await loadBookingContext(admin, token);
   if (!ctx?.bookable) return null;
-  const options = await loadSlotOptions(admin, ctx.kind);
+  const options = await loadSlotOptions(admin, ctx.kind, 6, home && ctx.kind === "lab");
   return suggest(
     {
       language: isLang(lang) ? lang : ctx.patient.language,
@@ -44,8 +44,10 @@ export async function bookSlot(_prev: BookState, form: FormData): Promise<BookSt
   const slotId = String(form.get("slotId") ?? "");
   if (!partnerId || !slotId) return { error: t(lang, "pick") };
 
-  const result = await bookForLink(createAdminClient(), token, partnerId, slotId);
+  const address = Object.fromEntries(["house", "block", "street", "area", "landmark", "pincode", "lat", "lon"].map((k) => [k, form.get(k) ?? ""]));
+  const result = await bookForLink(createAdminClient(), token, partnerId, slotId, address);
   if (result.ok) return { done: true };
+  if (result.code === "address_needed") return { error: t(lang, "addressNeeded") };
   return { error: result.code === "slot_unavailable" ? t(lang, "slotTaken") : result.code === "failed" ? t(lang, "somethingWrong") : t(lang, "linkInvalid") };
 }
 

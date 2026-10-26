@@ -1,4 +1,4 @@
-import { Building2, CalendarClock, CircleCheck, FlaskConical } from "lucide-react";
+import { Building2, CalendarClock, CircleCheck, FlaskConical, House } from "lucide-react";
 import { timeUntil } from "@/lib/format/countdown";
 import { Suspense } from "react";
 import { JourneyProgress } from "@/components/journey-progress";
@@ -6,9 +6,12 @@ import { PageHeader } from "@/components/page-header";
 import { StatusPill } from "@/components/status-pill";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
+import { decodeAddress } from "@/lib/contacts/address";
+import { addressesFor, contactFor } from "@/lib/contacts/store";
 import { nextAction, statusOf } from "@/lib/journey/derived";
 import { visitActions } from "@/lib/journey/partnerActions";
 import { STAGE_LABEL, type Stage } from "@/lib/journey/stages";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { AddSlotForm, AttendedButton, MissedButton, RemoveSlotButton, UploadForm } from "./partner-forms";
 
@@ -28,8 +31,8 @@ type Visit = {
   id: string;
   journey_id: string;
   slot_label: string | null;
-  slots: { starts_at: string } | null;
-  journeys: { stage: number; missed: boolean; patients: { code: string; name: string } | null } | null;
+  slots: { starts_at: string; home: boolean } | null;
+  journeys: { stage: number; missed: boolean; lft: boolean; patients: { code: string; name: string } | null } | null;
 };
 
 async function Content({ searchParams }: { searchParams: PageProps<"/partner">["searchParams"] }) {
@@ -45,14 +48,21 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
     supabase.from("partners").select("name, area").eq("id", user.partnerId!).maybeSingle(),
     supabase
       .from("bookings")
-      .select("id, journey_id, slot_label, slots(starts_at), journeys(stage, missed, patients(code, name))")
+      .select("id, journey_id, slot_label, slots(starts_at, home), journeys(stage, missed, lft, patients(code, name))")
       .in("status", ["booked", "missed"])
       .order("created_at"),
-    supabase.from("slots").select("id, starts_at, taken").eq("partner_id", user.partnerId!).gte("starts_at", nowIso).order("starts_at"),
+    supabase.from("slots").select("id, starts_at, taken, home").eq("partner_id", user.partnerId!).gte("starts_at", nowIso).order("starts_at"),
   ]);
 
   const rows = (visits ?? []) as unknown as Visit[];
   const uploadLabel = user.role === "lab" ? "Lab report" : "FibroScan report";
+
+  // Home visits: the collector needs the address and a number to call. They are decrypted for this lab's own visits only
+  // (the rows above already passed row-level security).
+  const homeRows = rows.filter((v) => v.slots?.home);
+  const admin = createAdminClient();
+  const addresses = await addressesFor(admin, homeRows.map((v) => v.id));
+  const phones = new Map(await Promise.all(homeRows.map(async (v) => [v.id, await contactFor(admin, v.journey_id)] as const)));
 
   const isLab = user.role === "lab";
 
@@ -112,7 +122,30 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
                     <dt className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Booked for</dt>
                     <dd className="font-semibold">{v.slot_label ?? "To be confirmed"}</dd>
                   </div>
+                  {j.lft && (
+                    <div>
+                      <dt className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Tests</dt>
+                      <dd className="font-semibold">Includes liver function tests (LFT)</dd>
+                    </div>
+                  )}
                 </dl>
+                {v.slots?.home && (
+                  <div className="flex flex-col gap-1 rounded-xl bg-secondary/60 p-4 text-sm">
+                    <p className="flex items-center gap-2 font-bold">
+                      <House className="size-4" aria-hidden="true" />
+                      Home visit: collect the sample at the patient&apos;s address
+                    </p>
+                    <p className="whitespace-pre-line" data-testid="home-address">
+                      {addresses.has(v.id) ? decodeAddress(addresses.get(v.id)!).text : "The address could not be read. Call the patient to confirm it."}
+                    </p>
+                    {addresses.has(v.id) && decodeAddress(addresses.get(v.id)!).mapUrl && (
+                      <a href={decodeAddress(addresses.get(v.id)!).mapUrl!} target="_blank" rel="noopener noreferrer" className="w-fit font-semibold text-primary underline underline-offset-4">
+                        Open the pin in Maps
+                      </a>
+                    )}
+                    {phones.get(v.id) && <p>Phone: +{phones.get(v.id)}</p>}
+                  </div>
+                )}
                 {next && !actions.waitingForPatient && (
                   <p className="text-sm text-muted-foreground">
                     Next: {next.who}: {next.what}
@@ -144,7 +177,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
             <CardDescription>Patients choose from these. Keep them up to date.</CardDescription>
           </div>
         </div>
-        <AddSlotForm />
+        <AddSlotForm canHome={isLab} />
         {(slots ?? []).length === 0 ? (
           <p className="text-muted-foreground">No upcoming slots. Add some so patients can book.</p>
         ) : (
@@ -154,6 +187,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
                 <span className="flex flex-wrap items-center gap-x-3">
                   <span className="whitespace-nowrap font-semibold">{when(s.starts_at)}</span>
                   <StatusPill label={s.taken ? "Taken" : "Open"} tone={s.taken ? "info" : "ok"} />
+                  {s.home && <StatusPill label="Home visit" tone="info" />}
                 </span>
                 {!s.taken && <RemoveSlotButton slotId={s.id} />}
               </li>

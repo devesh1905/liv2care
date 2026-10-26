@@ -132,7 +132,12 @@ export function EnrolForm() {
         </fieldset>
 
         {route === "order_tests" ? (
-          <CheckRow name="ultrasound">Also order an ultrasound</CheckRow>
+          <div className="flex flex-col gap-3">
+            <CheckRow name="lft" defaultChecked>
+              Include liver function tests (LFT) with the blood tests
+            </CheckRow>
+            <CheckRow name="ultrasound">Also order an ultrasound</CheckRow>
+          </div>
         ) : (
           <div className="flex flex-col gap-3">
             <CheckRow checked={patientUploads} onChange={(e) => setPatientUploads(e.target.checked)}>
