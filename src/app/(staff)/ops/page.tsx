@@ -2,6 +2,7 @@ import { CircleCheck, Users } from "lucide-react";
 import { Suspense } from "react";
 import { JourneyTable, type JourneyRow } from "@/components/journey-table";
 import { PageHeader } from "@/components/page-header";
+import { PageSkeleton } from "@/components/skeleton";
 import { StatTile } from "@/components/stat-tile";
 import { StatusPill } from "@/components/status-pill";
 import { Card } from "@/components/ui/card";
@@ -209,7 +210,7 @@ export default function Page(props: PageProps<"/ops">) {
         description="Track pending actions, remind patients, and see every step that was taken."
         icon={<Users className="size-5" />}
       />
-      <Suspense fallback={<div role="status" aria-label="Loading" className="h-24 animate-pulse rounded-xl bg-muted" />}>
+      <Suspense fallback={<PageSkeleton tiles={4} cards={2} />}>
         <Dashboard searchParams={props.searchParams} />
       </Suspense>
     </>

@@ -64,7 +64,7 @@ export function BookingPicker({
   }
 
   return (
-    <form action={action} className="flex flex-col gap-6 pb-28">
+    <form action={action} className="flex flex-col gap-6 pb-[calc(7rem+env(safe-area-inset-bottom))]">
       <input type="hidden" name="token" value={token} />
       <input type="hidden" name="lang" value={lang} />
       <input type="hidden" name="partnerId" value={chosen?.partnerId ?? ""} />
@@ -163,7 +163,7 @@ export function BookingPicker({
 
       {home && <AddressPicker lang={lang} />}
 
-      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 p-4 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-10 border-t bg-card/95 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
           {state.error && (
             <p role="alert" className="rounded-lg bg-bad-soft px-3 py-2 text-sm font-semibold text-bad">

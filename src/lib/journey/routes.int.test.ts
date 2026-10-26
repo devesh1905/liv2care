@@ -88,6 +88,19 @@ describe("Option 1: existing lab report", () => {
   });
 });
 
+describe("the same form sent twice", () => {
+  it("starts one journey; the second try is told it is a duplicate", async () => {
+    const journeyId = randomUUID();
+    expect((await startJourney(admin, DOCTOR, { ...base, journeyId, route: "order_tests" })).ok).toBe(true);
+    const again = await startJourney(admin, DOCTOR, { ...base, journeyId, route: "order_tests" });
+    expect(again).toMatchObject({ ok: false, error: { code: "duplicate" } });
+    const { count } = await admin.from("journeys").select("id", { count: "exact", head: true }).eq("id", journeyId);
+    expect(count).toBe(1);
+    const { count: started } = await admin.from("journey_events").select("id", { count: "exact", head: true }).eq("journey_id", journeyId).eq("event", "JOURNEY_STARTED");
+    expect(started).toBe(1);
+  });
+});
+
 describe("Option 2: order the tests", () => {
   it("books a slot, then the lab uploads: report received, slot taken, visit attended", async () => {
     const journeyId = randomUUID();

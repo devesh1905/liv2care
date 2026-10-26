@@ -1,6 +1,7 @@
 import { CircleCheck, ClipboardList, FileText, Inbox, RotateCcw } from "lucide-react";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
+import { PageSkeleton } from "@/components/skeleton";
 import { StatTile } from "@/components/stat-tile";
 import { Card } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
@@ -159,7 +160,7 @@ export default function Page(props: PageProps<"/clinician">) {
         description="Open the original report, type the FIB-4 and write the clinical summary for the treating doctor."
         icon={<ClipboardList className="size-5" />}
       />
-      <Suspense fallback={<div role="status" aria-label="Loading" className="h-32 animate-pulse rounded-xl bg-muted" />}>
+      <Suspense fallback={<PageSkeleton cards={2} />}>
         <Content searchParams={props.searchParams} />
       </Suspense>
     </>

@@ -2,6 +2,7 @@ import { CalendarCheck, CircleCheck, FileText, Stethoscope } from "lucide-react"
 import { Suspense } from "react";
 import { JourneyTable, type JourneyRow } from "@/components/journey-table";
 import { PageHeader } from "@/components/page-header";
+import { PageSkeleton } from "@/components/skeleton";
 import { StatTile } from "@/components/stat-tile";
 import { Card } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
@@ -202,13 +203,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">[
 }
 
 function DashboardSkeleton() {
-  return (
-    <div role="status" aria-label="Loading" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
-      ))}
-    </div>
-  );
+  return <PageSkeleton tiles={4} cards={2} />;
 }
 
 export default function Page(props: PageProps<"/doctor">) {

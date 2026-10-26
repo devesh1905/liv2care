@@ -46,7 +46,8 @@ export async function bookSlot(_prev: BookState, form: FormData): Promise<BookSt
 
   const address = Object.fromEntries(["house", "block", "street", "area", "landmark", "pincode", "lat", "lon"].map((k) => [k, form.get(k) ?? ""]));
   const result = await bookForLink(createAdminClient(), token, partnerId, slotId, address);
-  if (result.ok) return { done: true };
+  // Nothing left to book means this exact form was already accepted a moment ago (a double tap): show the confirmation.
+  if (result.ok || result.code === "not_bookable") return { done: true };
   if (result.code === "address_needed") return { error: t(lang, "addressNeeded") };
   return { error: result.code === "slot_unavailable" ? t(lang, "slotTaken") : result.code === "failed" ? t(lang, "somethingWrong") : t(lang, "linkInvalid") };
 }
@@ -63,6 +64,7 @@ export async function sendReport(_prev: UploadState, form: FormData): Promise<Up
   const file = form.get("report");
   if (!(file instanceof File) || file.size === 0) return { error: t(lang, "uploadChoose") };
   const result = await uploadReportForLink(createAdminClient(), token, new Uint8Array(await file.arrayBuffer()), file.name);
-  if (result.ok) return { done: true };
+  // No report is needed any more: the same upload was already accepted (a double tap), so show "received".
+  if (result.ok || result.code === "not_requested") return { done: true };
   return { error: result.code === "invalid_link" ? t(lang, "linkInvalid") : result.code === "bad_file" ? result.message : t(lang, "uploadFailed") };
 }

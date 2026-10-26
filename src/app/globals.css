@@ -66,6 +66,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Equal-width digits, so countdowns, times and counts do not jiggle as they change. */
+    font-variant-numeric: tabular-nums;
   }
   html {
     @apply font-sans;
@@ -74,6 +76,11 @@
   h2,
   h3 {
     @apply font-heading tracking-tight;
+    /* Even line lengths in headings instead of one stranded word on the last line. */
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
   }
   /* Hindi reads best in a Devanagari-first stack with a little more line height. */
   :lang(hi) {
