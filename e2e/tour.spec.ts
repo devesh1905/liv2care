@@ -16,16 +16,22 @@ test("tour: every role and the patient's phone, step by step", async ({ browser 
   test.setTimeout(240_000);
   await addSoonSlots(PARTNER.sunrise, 3);
 
-  // a visitor on a phone
+  // a visitor on a phone: the opening screen first (?splash=1 shows it even to the test browser), caught mid-way
   const visitor = await (await browser.newContext({ viewport: PHONE })).newPage();
+  await visitor.goto("/?splash=1");
+  await visitor.waitForTimeout(500);
+  await visitor.screenshot({ path: `${DIR}/00-splash-phone.png` });
+  await visitor.waitForTimeout(1500);
   for (const [path, name] of [["/", "01-home-phone"], ["/demo", "02-demo-roles-phone"], ["/demo/doctor", "03-demo-doctor-signin-phone"]] as const) {
     await visitor.goto(path);
     await visitor.waitForLoadState("networkidle");
+    await visitor.waitForTimeout(1800); // let the home page's lines finish drawing
     await shot(visitor, name);
   }
   const wide = await (await browser.newContext({ viewport: LAPTOP })).newPage();
   await wide.goto("/");
   await wide.waitForLoadState("networkidle");
+  await wide.waitForTimeout(1800);
   await shot(wide, "01-home-laptop");
 
   // the doctor enrols a patient

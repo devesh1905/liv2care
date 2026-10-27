@@ -92,3 +92,127 @@
     outline-offset: 2px;
   }
 }
+/* ---------- Splash, gradient mesh, glass and blueprint (home page and opening screen) ---------- */
+
+/* A soft gradient mesh in the brand blues and a calm teal. Light enough that dark text on top keeps full contrast. */
+.mesh-bg {
+  background-color: #eef4fb;
+  background-image:
+    radial-gradient(at 12% 18%, rgb(11 99 182 / 0.22) 0, transparent 52%),
+    radial-gradient(at 88% 12%, rgb(20 160 160 / 0.18) 0, transparent 48%),
+    radial-gradient(at 70% 88%, rgb(94 174 245 / 0.22) 0, transparent 55%),
+    radial-gradient(at 20% 90%, rgb(27 127 75 / 0.1) 0, transparent 45%);
+  background-size: 140% 140%;
+}
+
+/* Frosted glass: enough white behind the text that it reads like a normal card. */
+.glass {
+  background-color: rgb(255 255 255 / 0.72);
+  border: 1px solid rgb(255 255 255 / 0.8);
+  box-shadow: 0 1px 2px rgb(22 39 58 / 0.05), 0 12px 32px rgb(11 99 182 / 0.08);
+  backdrop-filter: blur(14px) saturate(1.3);
+  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
+
+/* Faint blueprint grid behind the pathway. */
+.blueprint-grid {
+  background-image:
+    linear-gradient(rgb(11 99 182 / 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(11 99 182 / 0.06) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* The connector line between pathway steps, drawn as a dashed blueprint line. */
+.blueprint-line {
+  background-image: linear-gradient(90deg, var(--primary) 55%, transparent 0);
+  background-size: 12px 2px;
+  background-repeat: repeat-x;
+}
+.blueprint-line-v {
+  background-image: linear-gradient(180deg, var(--primary) 55%, transparent 0);
+  background-size: 2px 12px;
+  background-repeat: repeat-y;
+}
+
+/* The splash only exists while <html data-splash="on">; it fades out on its own and then stops covering the page. */
+.splash {
+  display: none;
+}
+html[data-splash="on"] .splash {
+  display: grid;
+  animation: splash-out 0.45s ease-in 0.95s forwards;
+}
+html[data-splash="on"] .splash-mark {
+  animation: splash-in 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+html[data-splash="on"] .splash-beat {
+  animation: heartbeat 0.7s ease-in-out 0.35s 1;
+}
+
+@keyframes splash-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes splash-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.18);
+  }
+  45% {
+    transform: scale(0.96);
+  }
+  65% {
+    transform: scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .mesh-drift {
+    animation: mesh-drift 18s ease-in-out infinite alternate;
+  }
+  .draw-x {
+    transform-origin: left center;
+    animation: draw-x 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+  }
+  .draw-y {
+    transform-origin: center top;
+    animation: draw-y 1.4s cubic-bezier(0.4, 0, 0.2, 1) 0.3s both;
+  }
+  .rise-in {
+    animation: splash-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@keyframes mesh-drift {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 100% 100%;
+  }
+}
+@keyframes draw-x {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes draw-y {
+  from {
+    transform: scaleY(0);
+  }
+}
