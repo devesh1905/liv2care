@@ -1,8 +1,19 @@
 # Real WhatsApp messages for the demo
 
-Two senders are supported. **Twilio's WhatsApp Sandbox** works today, with no business verification, and is used first when its settings are present. **Meta's Cloud API test number** only works once Meta has verified the business (until then Meta answers "Business Account locked").
+Three senders are supported, tried in this order: **OpenWA** (demo only), **Twilio's WhatsApp Sandbox**, then **Meta's Cloud API**. Twilio's sandbox works with no business verification. **Meta's Cloud API test number** only works once Meta has verified the business (until then Meta answers "Business Account locked").
 
-## Twilio WhatsApp Sandbox (recommended for the demo)
+## OpenWA (demo only: messages come from a "Livacare" number, no join step)
+
+OpenWA (github.com/rmyndharis/OpenWA, MIT) is a self-hosted gateway that sends from an ordinary WhatsApp number linked by QR code, like WhatsApp Web. **It is unofficial: WhatsApp can restrict or ban the number at any time, and its own README rules it out for healthcare.** Use it for the demo with a spare SIM, message only the team's and the doctors' own phones, and never put a real patient's number in it. The pilot uses Meta's Cloud API.
+
+1. A spare SIM with WhatsApp (or WhatsApp Business) on a phone. Set the profile name to **Livacare** and the profile photo to the Liv2care logo. Warm it up for a day or two: save the demo phones as contacts and exchange a few normal messages.
+2. Run OpenWA on an always-on server with a persistent disk for `/app/data` (Vercel cannot host it): the image `ghcr.io/rmyndharis/openwa`, port 2785. The first boot prints an admin API key once (also in `/app/data/.api-key`).
+3. Open the dashboard (`https://<server>/`), sign in with that key, create a session (for example `liv2care-demo`), start it, and scan the QR code from the spare phone (WhatsApp > Linked devices).
+4. In the dashboard, make an **operator** API key limited to that session.
+5. Settings in Vercel (then redeploy): `OPENWA_URL` (the server address, no trailing slash), `OPENWA_API_KEY` (the operator key, secret), `OPENWA_SESSION_ID`, and `DEMO_WHATSAPP_TO` (the demo phones). A patient number typed at enrolment is used instead when present.
+6. Have each demo phone message the Livacare number once first: WhatsApp drops some first messages to brand-new contacts.
+
+## Twilio WhatsApp Sandbox
 
 1. Sign in at console.twilio.com (a free trial account is enough).
 2. Open **Messaging > Try it out > Send a WhatsApp message**. Twilio shows the sandbox number (for example +1 415 523 8886) and a join phrase (for example `join something-word`).

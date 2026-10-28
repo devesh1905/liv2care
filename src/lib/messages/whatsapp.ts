@@ -5,7 +5,14 @@
  * the sets of settings below is present, the same text is also sent to ONE demo phone, so a doctor can watch the real
  * WhatsApp message arrive. Patients' own numbers are never stored in full, so nothing is sent to a patient.
  *
- * Twilio WhatsApp Sandbox (works without Meta's business verification; used first when set):
+ * OpenWA (a self-hosted gateway that sends from an ordinary WhatsApp number linked by QR code; for the DEMO only, never a
+ * pilot: it is unofficial, the number can be banned, and its authors rule it out for healthcare; used first when set):
+ *   OPENWA_URL                              the gateway's address, for example https://openwa.example.com (no trailing slash)
+ *   OPENWA_API_KEY                          an operator key from the OpenWA dashboard (secret: set in Vercel, never in the repo)
+ *   OPENWA_SESSION_ID                       the id of the linked WhatsApp session
+ *   DEMO_WHATSAPP_TO                        as below; no sandbox join is needed
+ *
+ * Twilio WhatsApp Sandbox (works without Meta's business verification):
  *   TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN   from the Twilio console (secrets: set in Vercel, never in the repo)
  *   TWILIO_WHATSAPP_FROM                    the sandbox number, for example whatsapp:+14155238886
  *   DEMO_WHATSAPP_TO                        the demo phone(s), country code first and digits only (for example 919876543210);
@@ -21,7 +28,15 @@ const GRAPH_VERSION = "v21.0";
 
 export type WhatsAppEnv = Partial<
   Record<
-    "WHATSAPP_PHONE_NUMBER_ID" | "WHATSAPP_ACCESS_TOKEN" | "DEMO_WHATSAPP_TO" | "TWILIO_ACCOUNT_SID" | "TWILIO_AUTH_TOKEN" | "TWILIO_WHATSAPP_FROM",
+    | "WHATSAPP_PHONE_NUMBER_ID"
+    | "WHATSAPP_ACCESS_TOKEN"
+    | "DEMO_WHATSAPP_TO"
+    | "TWILIO_ACCOUNT_SID"
+    | "TWILIO_AUTH_TOKEN"
+    | "TWILIO_WHATSAPP_FROM"
+    | "OPENWA_URL"
+    | "OPENWA_API_KEY"
+    | "OPENWA_SESSION_ID",
     string | undefined
   >
 >;
@@ -38,10 +53,17 @@ const validTo = (env: WhatsAppEnv) => {
   return numbers.length >= 1 && numbers.length <= 5 && numbers.every((n) => /^\d{8,15}$/.test(n));
 };
 
+const openwaSender = (env: WhatsAppEnv) =>
+  Boolean(env.OPENWA_URL && /^https?:\/\/[^\s]+$/.test(env.OPENWA_URL) && env.OPENWA_API_KEY && env.OPENWA_SESSION_ID && /^[\w-]{1,100}$/.test(env.OPENWA_SESSION_ID));
+
 const twilioSender = (env: WhatsAppEnv) =>
   Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_WHATSAPP_FROM && /^whatsapp:\+\d{8,15}$/.test(env.TWILIO_WHATSAPP_FROM));
 
 const metaSender = (env: WhatsAppEnv) => Boolean(env.WHATSAPP_PHONE_NUMBER_ID && env.WHATSAPP_ACCESS_TOKEN);
+
+export function openwaConfigured(env: WhatsAppEnv): boolean {
+  return openwaSender(env) && validTo(env);
+}
 
 export function twilioConfigured(env: WhatsAppEnv): boolean {
   return twilioSender(env) && validTo(env);
@@ -53,7 +75,7 @@ export function metaConfigured(env: WhatsAppEnv): boolean {
 
 /** True when a real WhatsApp sender is set up. */
 export function whatsappConfigured(env: WhatsAppEnv): boolean {
-  return twilioConfigured(env) || metaConfigured(env);
+  return openwaConfigured(env) || twilioConfigured(env) || metaConfigured(env);
 }
 
 async function relayViaTwilio(body: string, to: string, env: WhatsAppEnv, fetchImpl: typeof fetch): Promise<WhatsAppResult> {
@@ -65,6 +87,17 @@ async function relayViaTwilio(body: string, to: string, env: WhatsAppEnv, fetchI
     signal: AbortSignal.timeout(8000),
   });
   return res.ok ? { sent: true } : { sent: false, reason: `Twilio answered ${res.status}: the demo phone may not have joined the sandbox or messaged it in the last 24 hours` };
+}
+
+async function relayViaOpenWA(body: string, to: string, env: WhatsAppEnv, fetchImpl: typeof fetch): Promise<WhatsAppResult> {
+  const base = env.OPENWA_URL!.replace(/\/+$/, "");
+  const res = await fetchImpl(`${base}/api/sessions/${encodeURIComponent(env.OPENWA_SESSION_ID!)}/messages/send-text`, {
+    method: "POST",
+    headers: { "x-api-key": env.OPENWA_API_KEY!, "content-type": "application/json" },
+    body: JSON.stringify({ chatId: `${to}@c.us`, text: body, linkPreview: true }),
+    signal: AbortSignal.timeout(8000),
+  });
+  return res.ok ? { sent: true } : { sent: false, reason: `OpenWA answered ${res.status}: check that the session is linked and running` };
 }
 
 async function metaPost(env: WhatsAppEnv, to: string, payload: object, fetchImpl: typeof fetch): Promise<Response> {
@@ -95,13 +128,15 @@ export async function relayToWhatsApp(
   patientNumber?: string,
 ): Promise<WhatsAppResult> {
   const own = patientNumber && /^\d{8,15}$/.test(patientNumber) ? [patientNumber] : null;
-  const ready = own ? twilioSender(env) || metaSender(env) : whatsappConfigured(env);
+  const ready = own ? openwaSender(env) || twilioSender(env) || metaSender(env) : whatsappConfigured(env);
   if (!ready) return { sent: false, reason: "not configured" };
-  const useTwilio = own ? twilioSender(env) : twilioConfigured(env);
+  const useOpenWA = own ? openwaSender(env) : openwaConfigured(env);
+  const useTwilio = !useOpenWA && (own ? twilioSender(env) : twilioConfigured(env));
   // every phone gets the message; one phone failing (for example, it has not joined yet) does not stop the others
   const results = await Promise.all(
     (own ?? demoNumbers(env)).map(async (to) => {
       try {
+        if (useOpenWA) return await relayViaOpenWA(body, to, env, fetchImpl);
         return useTwilio ? await relayViaTwilio(body, to, env, fetchImpl) : await relayViaMeta(body, to, env, fetchImpl);
       } catch {
         return { sent: false, reason: "could not reach the WhatsApp service" } as WhatsAppResult;

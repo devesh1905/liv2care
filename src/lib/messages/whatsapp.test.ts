@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { demoNumbers, relayToWhatsApp, twilioConfigured, whatsappConfigured } from "./whatsapp";
+import { demoNumbers, openwaConfigured, relayToWhatsApp, twilioConfigured, whatsappConfigured } from "./whatsapp";
 
 const env = { WHATSAPP_PHONE_NUMBER_ID: "1234567890", WHATSAPP_ACCESS_TOKEN: "secret-token", DEMO_WHATSAPP_TO: "919876543210" };
 const ok = () => Promise.resolve(new Response("{}", { status: 200 }));
@@ -126,5 +126,40 @@ describe("the patient's own number", () => {
     });
     await relayToWhatsApp("hi", twilio, fetchImpl as unknown as typeof fetch, "not-a-number");
     expect(calls).toEqual(["whatsapp:+919876543210"]);
+  });
+});
+
+const openwa = { OPENWA_URL: "https://wa.example.test/", OPENWA_API_KEY: "openwa-secret", OPENWA_SESSION_ID: "liv2care-demo", DEMO_WHATSAPP_TO: "919876543210" };
+
+describe("OpenWA (demo gateway)", () => {
+  it("is configured with an address, a key, a session and a plain number", () => {
+    expect(openwaConfigured(openwa)).toBe(true);
+    expect(whatsappConfigured(openwa)).toBe(true);
+    expect(openwaConfigured({ ...openwa, OPENWA_URL: "wa.example.test" })).toBe(false);
+    expect(openwaConfigured({ ...openwa, OPENWA_SESSION_ID: "../admin" })).toBe(false);
+    expect(openwaConfigured({ ...openwa, OPENWA_API_KEY: "" })).toBe(false);
+  });
+
+  it("sends the text to the demo phone, before Twilio and Meta", async () => {
+    const fetchImpl = vi.fn(ok);
+    expect(await relayToWhatsApp("Tap to book: https://example.test/book/abc", { ...env, ...twilio, ...openwa }, fetchImpl)).toEqual({ sent: true });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://wa.example.test/api/sessions/liv2care-demo/messages/send-text");
+    expect((init.headers as Record<string, string>)["x-api-key"]).toBe("openwa-secret");
+    expect(JSON.parse(init.body as string)).toEqual({ chatId: "919876543210@c.us", text: "Tap to book: https://example.test/book/abc", linkPreview: true });
+  });
+
+  it("sends to the patient's own number when there is one", async () => {
+    const fetchImpl = vi.fn(ok);
+    await relayToWhatsApp("hi", openwa, fetchImpl, "917000000001");
+    expect(JSON.parse((fetchImpl.mock.calls[0] as unknown as [string, RequestInit])[1].body as string).chatId).toBe("917000000001@c.us");
+  });
+
+  it("says why when the gateway refuses, without repeating the key", async () => {
+    const result = await relayToWhatsApp("hi", openwa, refused);
+    expect(result).toMatchObject({ sent: false });
+    expect(result.reason).toContain("OpenWA");
+    expect(JSON.stringify(result)).not.toContain("openwa-secret");
   });
 });
