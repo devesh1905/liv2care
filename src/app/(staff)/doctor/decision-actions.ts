@@ -38,6 +38,16 @@ async function run(journeyId: string, doctorId: string, event: JourneyEvent, det
   return transitionJourney(journeyId, event, { id: doctorId, role: "doctor" }, detail, effects);
 }
 
+/** Flags the patient as urgent (or clears it). Logistics only; the doctor's own patients only. */
+export async function setUrgent(_prev: DecisionState, form: FormData): Promise<DecisionState> {
+  const ctx = await begin(form);
+  if ("error" in ctx) return ctx;
+  const urgent = form.get("urgent") === "on";
+  const { error } = await createAdminClient().from("journeys").update({ urgent }).eq("id", ctx.journeyId);
+  if (error) return { error: "The flag could not be changed. Try again." };
+  redirect(`/doctor?notice=${urgent ? "urgent" : "not-urgent"}`);
+}
+
 export async function approveFibroscan(_prev: DecisionState, form: FormData): Promise<DecisionState> {
   const ctx = await begin(form);
   if ("error" in ctx) return ctx;

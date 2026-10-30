@@ -7,6 +7,7 @@ import { Field, FormMessage, Select } from "@/components/ui/field";
 import { DECLINE_REASONS } from "@/lib/journey/types";
 import { cn } from "@/lib/utils";
 import {
+  setUrgent,
   approveFibroscan,
   chooseNextStep,
   declineFibroscan,
@@ -152,5 +153,20 @@ export function FollowUpButtons({ journeyId, canMiss }: { journeyId: string; can
         </OneButton>
       )}
     </div>
+  );
+}
+
+/** Flag or unflag the patient as urgent: they go first in the lab's, the centre's and the clinician's lists. */
+export function UrgentToggle({ journeyId, urgent }: { journeyId: string; urgent: boolean }) {
+  const [state, action, pending] = useActionState<DecisionState, FormData>(setUrgent, {});
+  return (
+    <form action={action} className="flex flex-col gap-1">
+      <Hidden journeyId={journeyId} />
+      <input type="hidden" name="urgent" value={urgent ? "off" : "on"} />
+      <Button type="submit" size="sm" variant={urgent ? "ghost" : "outline"} disabled={pending}>
+        {urgent ? "Remove urgent flag" : "Mark as urgent"}
+      </Button>
+      <FormMessage error={state.error} />
+    </form>
   );
 }
