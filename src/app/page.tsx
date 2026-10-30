@@ -37,7 +37,7 @@ const journey = [
   },
   { who: "Treating doctor", what: "Approves a FibroScan", state: "now" },
   {
-    who: "Diagnostic centre",
+    who: "FibroScan centre",
     what: "Scan booked by the patient",
     state: "next",
   },

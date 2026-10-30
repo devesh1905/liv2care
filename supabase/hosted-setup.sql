@@ -30,7 +30,7 @@ from public.partners p
 cross join generate_series(1, 3) d
 cross join (values (interval '9 hours'), (interval '11 hours 30 minutes'), (interval '16 hours')) as times(t)
 where p.kind in ('lab', 'centre', 'eval', 'specialist')
-on conflict (partner_id, starts_at) do nothing;
+on conflict (partner_id, starts_at, home) do nothing;
 
 -- ---------- profiles: connect each staff user to a role ----------
 insert into public.profiles (id, role, display_name, partner_id)

@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 /**
- * The demo access pages: /demo lists one link per person, and each person has their own sign-in page where the visitor
- * types that account's password. Runs against the local seed (password in supabase/seed.sql); fake data only.
+ * The demo access pages: /demo has a one-click sign-in button per person, and each person also has their own sign-in
+ * page where the visitor can type that account's password. Runs against the local seed (password in supabase/seed.sql); fake data only.
  */
 const LOCAL_PASSWORD = "demo-liv2care-only";
 
@@ -16,12 +16,22 @@ test("the home page speaks to doctors and patients and has no role buttons", asy
   await page.waitForURL("**/demo");
 });
 
-test("every person has a link, and each opens their own sign-in page", async ({ page }) => {
-  await page.goto("/demo");
-  for (const name of [/Treating doctor/, /Telemedicine clinician/, /^Lab/, /Diagnostic centre/, /Operations/]) {
-    await expect(page.getByRole("link", { name }).first()).toBeVisible();
+test("one click signs in as each person, the FibroScan centre included", async ({ browser }) => {
+  for (const [label, path] of [["Treating doctor", "/doctor"], ["FibroScan centre", "/partner"], ["Telemedicine clinician", "/clinician"]] as const) {
+    const page = await (await browser.newContext()).newPage();
+    await page.goto("/demo");
+    await page.getByRole("button", { name: `Sign in as ${label}` }).click();
+    await page.waitForURL(`**${path}`);
+    if (path === "/partner") await expect(page.getByRole("heading", { name: "FibroScan centre", level: 1 })).toBeVisible();
   }
-  await page.getByRole("link", { name: /Treating doctor/ }).click();
+});
+
+test("each person also has a password page", async ({ page }) => {
+  await page.goto("/demo");
+  for (const label of ["Treating doctor", "Telemedicine clinician", "Lab", "FibroScan centre", "Operations"]) {
+    await expect(page.getByRole("button", { name: `Sign in as ${label}`, exact: true })).toBeVisible();
+  }
+  await page.getByRole("link", { name: "Use the password instead" }).first().click();
   await page.waitForURL("**/demo/doctor");
   await expect(page.getByRole("heading", { name: "Sign in as the treating doctor" })).toBeVisible();
   await expect(page.getByLabel("Email")).toHaveValue("doctor@demo.liv2care.test");
