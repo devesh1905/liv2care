@@ -66,6 +66,7 @@ test.describe("sign-in and access", () => {
   test("after signing out, a staff page asks for sign-in again", async ({ browser }) => {
     const doctor = await signInAs(browser, "doctor");
     await doctor.getByRole("button", { name: "Sign out" }).click();
+    await doctor.waitForURL((u) => !u.pathname.startsWith("/doctor")); // sign-out has finished and cleared the session
     await doctor.goto("/doctor");
     await expect(doctor).toHaveURL(/\/login/);
     await doctor.goBack();
