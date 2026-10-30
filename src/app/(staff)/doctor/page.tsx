@@ -4,11 +4,12 @@ import { JourneyTable, type JourneyRow } from "@/components/journey-table";
 import { PageHeader } from "@/components/page-header";
 import { PageSkeleton } from "@/components/skeleton";
 import { StatTile } from "@/components/stat-tile";
+import { UrgentPill } from "@/components/urgent-pill";
 import { Card } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
 import { STAGE } from "@/lib/journey/stages";
 import { createClient } from "@/lib/supabase/server";
-import { ApproveButton, DeclineForm, FollowUpButtons, NextStepForm, RereviewButton } from "./decision-forms";
+import { ApproveButton, DeclineForm, FollowUpButtons, NextStepForm, RereviewButton, UrgentToggle } from "./decision-forms";
 import { EnrolForm } from "./enrol-form";
 
 export const metadata = { title: "Treating doctor" };
@@ -17,6 +18,8 @@ const NOTICES: Record<string, string> = {
   approved: "FibroScan approved. A booking link was sent to the patient (simulated).",
   declined: "FibroScan not approved. The case stays on your dashboard.",
   rereview: "Sent back to the clinician for re-review.",
+  urgent: "Marked as urgent. The patient now comes first in the lab's, the clinician's and the FibroScan centre's lists.",
+  "not-urgent": "Urgent flag removed.",
   routine: "Routine follow-up booked at your clinic. The patient was told (simulated).",
   eval: "Further evaluation ordered. A booking link was sent to the patient (simulated).",
   specialist: "Specialist referral made. A booking link was sent to the patient (simulated).",
@@ -28,6 +31,7 @@ type WorkItem = {
   id: string;
   stage: number;
   next_step: string | null;
+  urgent: boolean;
   patients: { code: string; name: string; age: number } | null;
   reviews: { fib4_text: string; summary: string; recommends_vcte: boolean; created_at: string }[];
   reports: { id: string; kind: string; file_name: string; created_at: string }[];
@@ -60,6 +64,10 @@ function WorkCard({ item }: { item: WorkItem }) {
         <p className="text-xs text-muted-foreground">
           {item.patients?.code} · {item.patients?.age} years
         </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {item.urgent && <UrgentPill />}
+          {item.stage !== STAGE.NEXT_BOOKED && <UrgentToggle journeyId={item.id} urgent={item.urgent} />}
+        </div>
       </header>
 
       {item.stage !== STAGE.NEXT_BOOKED && latest && (
@@ -124,7 +132,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">[
     supabase
       .from("journeys")
       .select(
-        "id, stage, next_step, patients(code, name, age), reviews(fib4_text, summary, recommends_vcte, created_at), reports(id, kind, file_name, created_at), bookings(status, slot_label, created_at, partners(name))",
+        "id, stage, next_step, urgent, patients(code, name, age), reviews(fib4_text, summary, recommends_vcte, created_at), reports(id, kind, file_name, created_at), bookings(status, slot_label, created_at, partners(name))",
       )
       .in("stage", [STAGE.REVIEWED, STAGE.VCTE_REPORT, STAGE.NEXT_BOOKED])
       .eq("missed", false)

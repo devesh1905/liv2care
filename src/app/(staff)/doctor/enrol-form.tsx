@@ -174,6 +174,10 @@ export function EnrolForm() {
           </div>
         )}
 
+        <CheckRow name="urgent" className="rounded-xl border border-bad/30 bg-bad-soft/50 p-4">
+          <span className="font-semibold">Urgent.</span> Put this patient first for the lab, the clinician and the FibroScan centre, and ask
+          the patient to book the earliest time.
+        </CheckRow>
         <CheckRow name="consent" required defaultChecked={state.typed?.consent} className="rounded-xl bg-secondary/60 p-4 font-semibold">
           The patient has given consent to this pathway and to sharing their reports with the platform clinician.
         </CheckRow>

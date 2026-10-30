@@ -5,6 +5,7 @@ import { JourneyProgress } from "@/components/journey-progress";
 import { PageHeader } from "@/components/page-header";
 import { PageSkeleton } from "@/components/skeleton";
 import { StatusPill } from "@/components/status-pill";
+import { UrgentPill } from "@/components/urgent-pill";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
 import { decodeAddress } from "@/lib/contacts/address";
@@ -33,7 +34,7 @@ type Visit = {
   journey_id: string;
   slot_label: string | null;
   slots: { starts_at: string; home: boolean } | null;
-  journeys: { stage: number; missed: boolean; lft: boolean; patients: { code: string; name: string } | null } | null;
+  journeys: { stage: number; missed: boolean; lft: boolean; urgent: boolean; patients: { code: string; name: string } | null } | null;
 };
 
 async function Content({ searchParams }: { searchParams: PageProps<"/partner">["searchParams"] }) {
@@ -49,13 +50,14 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
     supabase.from("partners").select("name, area").eq("id", user.partnerId!).maybeSingle(),
     supabase
       .from("bookings")
-      .select("id, journey_id, slot_label, slots(starts_at, home), journeys(stage, missed, lft, patients(code, name))")
+      .select("id, journey_id, slot_label, slots(starts_at, home), journeys(stage, missed, lft, urgent, patients(code, name))")
       .in("status", ["booked", "missed"])
       .order("created_at"),
     supabase.from("slots").select("id, starts_at, taken, home").eq("partner_id", user.partnerId!).gte("starts_at", nowIso).order("starts_at"),
   ]);
 
-  const rows = (visits ?? []) as unknown as Visit[];
+  // urgent patients first, then in booking order
+  const rows = ((visits ?? []) as unknown as Visit[]).sort((a, b) => Number(!!b.journeys?.urgent) - Number(!!a.journeys?.urgent));
   const uploadLabel = user.role === "lab" ? "Lab report" : "FibroScan report";
 
   // Home visits: the collector needs the address and a number to call. They are decrypted for this lab's own visits only
@@ -110,6 +112,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/partner">["
                   <div>
                     <h3 className="font-heading text-lg font-extrabold">{j.patients.name}</h3>
                     <p className="text-xs text-muted-foreground">{j.patients.code}</p>
+                    {j.urgent && <UrgentPill />}
                   </div>
                   <StatusPill {...status} />
                 </header>

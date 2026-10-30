@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { PageSkeleton } from "@/components/skeleton";
 import { StatTile } from "@/components/stat-tile";
+import { UrgentPill } from "@/components/urgent-pill";
 import { Card } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
 import { STAGE_LABEL, type Stage } from "@/lib/journey/stages";
@@ -14,6 +15,7 @@ export const metadata = { title: "Telemedicine clinician" };
 type QueueItem = {
   id: string;
   updated_at: string;
+  urgent: boolean;
   patients: { code: string; name: string; age: number } | null;
   reports: { id: string; kind: string; file_name: string; created_at: string }[];
   reviews: { id: string }[];
@@ -41,7 +43,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
   const [{ data: queue }, { data: reviews }] = await Promise.all([
     supabase
       .from("journeys")
-      .select("id, updated_at, patients(code, name, age), reports(id, kind, file_name, created_at), reviews(id)")
+      .select("id, updated_at, urgent, patients(code, name, age), reports(id, kind, file_name, created_at), reviews(id)")
       .eq("stage", 2)
       .order("updated_at"),
     supabase
@@ -50,7 +52,8 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
       .order("created_at", { ascending: false })
       .limit(8),
   ]);
-  const items = (queue ?? []) as unknown as QueueItem[];
+  // urgent patients first, then the longest waiting
+  const items = ((queue ?? []) as unknown as QueueItem[]).sort((a, b) => Number(b.urgent) - Number(a.urgent));
   const done = (reviews ?? []) as unknown as SentReview[];
 
   return (
@@ -88,6 +91,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
                     <p className="text-xs text-muted-foreground">
                       {item.patients?.code} · {item.patients?.age} years · waiting since {when(item.updated_at)}
                     </p>
+                    {item.urgent && <UrgentPill />}
                   </div>
                   {item.reviews.length > 0 && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-warn-soft px-2.5 py-1 text-xs font-bold text-warn">

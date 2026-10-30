@@ -6,6 +6,7 @@
 export type MessageLang = "en" | "hi";
 
 const en = {
+  urgentNote: () => "Your doctor has marked this as urgent. Please book the earliest time you can.",
   testsOrdered: (url: string, ultrasound: boolean, progress?: string, lft = false) =>
     `Your doctor has requested some blood tests${lft ? " (including liver function tests)" : ""}${ultrasound ? " and an ultrasound" : ""}. Tap to book a visit to a nearby lab, or a home collection: ${url}${progress ? `\nTrack your progress: ${progress}` : ""}`,
   fibroscanApproved: (url: string) => `Your doctor has recommended a FibroScan. Tap to book at a nearby diagnostic centre: ${url}`,
@@ -29,6 +30,7 @@ Track your progress: ${progress}` : ""}`,
 export type Templates = typeof en;
 
 const hi: Templates = {
+  urgentNote: () => "आपके डॉक्टर ने इसे ज़रूरी बताया है। कृपया जितनी जल्दी हो सके, समय बुक करें।",
   testsOrdered: (url, ultrasound, progress, lft = false) =>
     `आपके डॉक्टर ने कुछ ब्लड टेस्ट${lft ? " (लिवर फंक्शन टेस्ट सहित)" : ""}${ultrasound ? " और अल्ट्रासाउंड" : ""} कराने को कहा है। पास की लैब में अपॉइंटमेंट बुक करने या घर पर सैंपल देने के लिए यहाँ टैप करें: ${url}${progress ? `\nअपनी प्रगति देखें: ${progress}` : ""}`,
   fibroscanApproved: (url) => `आपके डॉक्टर ने फाइब्रोस्कैन की सलाह दी है। पास के डायग्नोस्टिक सेंटर में बुक करने के लिए यहाँ टैप करें: ${url}`,
