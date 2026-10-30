@@ -67,7 +67,15 @@ function WorkCard({ item }: { item: WorkItem }) {
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Clinician&apos;s review</p>
           <p className="text-sm">
             <span className="font-semibold">FIB-4 typed by the clinician:</span> {latest.fib4_text}
-            {latest.recommends_vcte && <span className="ml-2 rounded-full bg-info-soft px-2 py-0.5 text-xs font-bold text-info">FibroScan recommended</span>}
+          </p>
+          <p
+            className={
+              latest.recommends_vcte
+                ? "w-fit rounded-full bg-info-soft px-2.5 py-0.5 text-xs font-bold text-info"
+                : "w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground"
+            }
+          >
+            {latest.recommends_vcte ? "The clinician recommends a FibroScan" : "The clinician did not recommend a FibroScan"}
           </p>
           <p className="whitespace-pre-line text-sm text-muted-foreground">{latest.summary}</p>
         </div>
@@ -95,11 +103,24 @@ function WorkCard({ item }: { item: WorkItem }) {
 
       {item.stage === STAGE.REVIEWED && (
         <div className="flex flex-col gap-3">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ApproveButton journeyId={item.id} />
-            <RereviewButton journeyId={item.id} />
-          </div>
-          <DeclineForm journeyId={item.id} />
+          {/* The doctor decides either way; the clinician's recommendation only changes which choice is put first. */}
+          {latest?.recommends_vcte ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ApproveButton journeyId={item.id} recommended />
+                <RereviewButton journeyId={item.id} />
+              </div>
+              <DeclineForm journeyId={item.id} recommended />
+            </>
+          ) : (
+            <>
+              <DeclineForm journeyId={item.id} recommended={false} />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <ApproveButton journeyId={item.id} recommended={false} />
+                <RereviewButton journeyId={item.id} />
+              </div>
+            </>
+          )}
         </div>
       )}
       {item.stage === STAGE.VCTE_REPORT && <NextStepForm journeyId={item.id} />}

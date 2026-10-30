@@ -53,9 +53,10 @@ function OneButton({
   );
 }
 
-export const ApproveButton = ({ journeyId }: { journeyId: string }) => (
-  <OneButton journeyId={journeyId} action={approveFibroscan} icon={<Check aria-hidden="true" />}>
-    Approve FibroScan
+/** When the clinician recommended a FibroScan, approving is the main action; otherwise the doctor can still order one. */
+export const ApproveButton = ({ journeyId, recommended }: { journeyId: string; recommended: boolean }) => (
+  <OneButton journeyId={journeyId} action={approveFibroscan} variant={recommended ? undefined : "outline"} icon={<Check aria-hidden="true" />}>
+    {recommended ? "Approve FibroScan" : "Order a FibroScan anyway"}
   </OneButton>
 );
 
@@ -65,12 +66,12 @@ export const RereviewButton = ({ journeyId }: { journeyId: string }) => (
   </OneButton>
 );
 
-export function DeclineForm({ journeyId }: { journeyId: string }) {
+export function DeclineForm({ journeyId, recommended }: { journeyId: string; recommended: boolean }) {
   const [state, action, pending] = useActionState<DecisionState, FormData>(declineFibroscan, {});
   return (
     <form action={action} className="flex flex-col gap-3 rounded-xl bg-secondary/60 p-4">
       <Hidden journeyId={journeyId} />
-      <Field label="Or decline FibroScan, with a reason">
+      <Field label={recommended ? "Or decline FibroScan, with a reason" : "No FibroScan for now, with a reason"}>
         <Select name="reason" defaultValue="" required>
           <option value="" disabled>
             Choose a reason
@@ -85,7 +86,7 @@ export function DeclineForm({ journeyId }: { journeyId: string }) {
       <FormMessage error={state.error} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">
         <X aria-hidden="true" />
-        Decline FibroScan
+        {recommended ? "Decline FibroScan" : "No FibroScan"}
       </Button>
     </form>
   );
