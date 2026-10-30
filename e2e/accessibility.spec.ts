@@ -49,8 +49,7 @@ for (const [name, size] of [
       await page.goto("/demo");
       await page.waitForLoadState("networkidle");
       await scan(page, `demo index ${name}`);
-      await page.getByRole("link", { name: /^Treating doctor/ }).first().click();
-      await page.waitForURL("**/demo/doctor");
+      await page.goto("/demo/doctor");
       await scan(page, `demo role page ${name}`);
       await page.getByLabel("Password").fill("not-the-password");
       await page.getByRole("button", { name: "Sign in" }).click();

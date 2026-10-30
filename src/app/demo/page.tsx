@@ -1,14 +1,19 @@
+import { LogIn } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { quickDemoSignIn } from "@/app/login/actions";
+import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { ROLE_BLURB, ROLE_ICON } from "@/components/demo-roles";
 import { ROLE_LABEL, STAFF_ROLES } from "@/lib/auth/roles";
+import { FailedNotice } from "./failed-notice";
 
 export const metadata = { title: "Demo access" };
 
 /**
- * Demo access for reviewers: one link per person. Each opens that person's own sign-in page, where the visitor types the
- * demo password for that account (the team gives it out; it is never shown here). Hidden unless DEMO_LOGINS=on.
+ * Demo access for reviewers: one button per person signs straight in as that demo account (no password to type). Each card
+ * also links to that account's password page. Hidden unless DEMO_LOGINS=on.
  */
 export default function DemoIndex() {
   if (process.env.DEMO_LOGINS !== "on") notFound();
@@ -21,25 +26,34 @@ export default function DemoIndex() {
       <div>
         <h1 className="font-heading text-3xl font-extrabold sm:text-4xl">Try the demo</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
-          Everything here uses pretend patients and pretend messages, so nothing is real and nothing is sent. Pick who you want to be. You
-          will be asked for that role&apos;s demo password (ask the team for it).
+          Everything here uses pretend patients and pretend messages, so nothing is real and nothing is sent. Pick who you want to be: one
+          click signs you in. Sign out from the top of any page to switch to another person.
         </p>
       </div>
+
+      <Suspense fallback={null}>
+        <FailedNotice />
+      </Suspense>
 
       <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {STAFF_ROLES.map((role) => {
           const Icon = ROLE_ICON[role];
           return (
-            <li key={role}>
-              <Link
-                href={`/demo/${role}`}
-                className="flex h-full flex-col items-start gap-1.5 rounded-lg border bg-card p-4 shadow-sm transition-colors hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40"
-              >
-                <span className="flex items-center gap-2 font-heading text-base font-semibold">
-                  <Icon className="size-5 text-primary" aria-hidden="true" />
-                  {ROLE_LABEL[role]}
-                </span>
-                <span className="text-sm text-muted-foreground">{ROLE_BLURB[role]}</span>
+            <li key={role} className="flex h-full flex-col gap-3 rounded-lg border bg-card p-4 shadow-sm">
+              <span className="flex items-center gap-2 font-heading text-base font-semibold">
+                <Icon className="size-5 text-primary" aria-hidden="true" />
+                {ROLE_LABEL[role]}
+              </span>
+              <span className="flex-1 text-sm text-muted-foreground">{ROLE_BLURB[role]}</span>
+              <form action={quickDemoSignIn}>
+                <input type="hidden" name="role" value={role} />
+                <Button type="submit" className="w-full">
+                  <LogIn aria-hidden="true" />
+                  Sign in as {ROLE_LABEL[role]}
+                </Button>
+              </form>
+              <Link href={`/demo/${role}`} className="w-fit text-xs font-semibold text-muted-foreground underline underline-offset-4 hover:text-foreground">
+                Use the password instead
               </Link>
             </li>
           );

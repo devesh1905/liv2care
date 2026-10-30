@@ -9,7 +9,7 @@ export const ROLE_LABEL: Record<StaffRole, string> = {
   doctor: "Treating doctor",
   clinician: "Telemedicine clinician",
   lab: "Lab",
-  centre: "Diagnostic centre",
+  centre: "FibroScan centre",
   ops: "Operations",
 };
 
