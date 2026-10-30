@@ -12,23 +12,28 @@ export type StaffUser = {
   partnerId: string | null;
 };
 
-/** The signed-in staff member, or null. Validates the session with Supabase Auth (not just the cookie). */
+/**
+ * The signed-in staff member, or null. The session token's signature is checked (getClaims verifies it with the project's
+ * signing keys, without a round trip to Supabase Auth on every page); the database still applies row-level security to
+ * every query, so a token alone never grants access to data.
+ */
 export const getStaffUser = cache(async (): Promise<StaffUser | null> => {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getUser();
-  if (!data.user) return null;
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
 
   // profiles is readable by any signed-in user under row-level security.
   const { data: profile } = await supabase
     .from("profiles")
     .select("role, display_name, partner_id")
-    .eq("id", data.user.id)
+    .eq("id", claims.sub)
     .maybeSingle();
   if (!profile || !isStaffRole(profile.role)) return null;
 
   return {
-    id: data.user.id,
-    email: data.user.email,
+    id: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : undefined,
     role: profile.role,
     displayName: profile.display_name,
     partnerId: profile.partner_id,
