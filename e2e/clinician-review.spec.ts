@@ -39,7 +39,16 @@ test("clinician reviews an existing report and sends it to the doctor", async ({
   expect(signed.headers().location).toContain("/storage/v1/object/sign/reports/");
 
   // 4. The clinician types the review and sends it
-  await card.getByLabel("FIB-4").fill("2.5 (typed by the clinician)");
+  // the calculator works the number out from values the clinician types; the clinician still decides what is sent
+  await card.getByText("FIB-4 calculator").click();
+  await card.getByLabel(/^Age/).fill("50");
+  await card.getByLabel(/^AST/).fill("40");
+  await card.getByLabel(/^ALT/).fill("25");
+  await card.getByLabel(/^Platelets/).fill("200");
+  await expect(card.getByRole("status").filter({ hasText: "FIB-4: 2.00" })).toBeVisible();
+  await card.getByRole("button", { name: "Put 2.00 in the FIB-4 box" }).click();
+  await expect(card.locator("input[name=fib4]")).toHaveValue("2.00");
+  await card.locator("input[name=fib4]").fill("2.5 (typed by the clinician)");
   await card.getByLabel("Clinical summary").fill(summaryText);
   await card.getByLabel(/considers a FibroScan/).check();
   await card.getByRole("button", { name: "Send to the treating doctor" }).click();

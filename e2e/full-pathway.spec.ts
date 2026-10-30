@@ -10,7 +10,7 @@ import { addSoonSlots, admin, linkFromMessage, PARTNER, PDF, signInAs } from "./
 const card = (page: Page, name: string) => page.locator("section:has(> header)").filter({ hasText: name });
 
 /** Enrols a patient with an existing report and takes it to the doctor's FibroScan decision. */
-async function reachDecision(browser: Browser, name: string) {
+async function reachDecision(browser: Browser, name: string, recommend = true) {
   const doctor = await signInAs(browser, "doctor");
   await doctor.getByLabel("Patient name", { exact: true }).fill(name);
   await doctor.getByLabel("Age", { exact: true }).fill("58");
@@ -27,6 +27,7 @@ async function reachDecision(browser: Browser, name: string) {
   const review = card(clinician, name);
   await review.getByLabel("FIB-4").fill("typed by the clinician");
   await review.getByLabel("Clinical summary").fill(`Summary typed for ${name}`);
+  if (recommend) await review.getByLabel(/I recommend that the treating doctor considers a FibroScan/).check();
   await review.getByRole("button", { name: "Send to the treating doctor" }).click();
   await expect(clinician.getByRole("status").filter({ hasText: "Review sent" })).toBeVisible();
 
@@ -157,11 +158,15 @@ for (const next of [
 
 test("decline: a preset reason is recorded and the case stays on the dashboard", async ({ browser }) => {
   const name = `Decline Person ${Date.now() % 100000}`;
-  const { doctor, journeyId } = await reachDecision(browser, name);
+  const { doctor, journeyId } = await reachDecision(browser, name, false);
 
+  // without the clinician's recommendation, "no FibroScan" comes first and ordering one is still possible
   const decision = card(doctor, name);
-  await decision.getByLabel("Or decline FibroScan, with a reason").selectOption("Cost or access");
-  await decision.getByRole("button", { name: "Decline FibroScan" }).click();
+  await expect(decision.getByText("The clinician did not recommend a FibroScan")).toBeVisible();
+  await expect(decision.getByRole("button", { name: "Approve FibroScan" })).toHaveCount(0);
+  await expect(decision.getByRole("button", { name: "Order a FibroScan anyway" })).toBeVisible();
+  await decision.getByLabel("No FibroScan for now, with a reason").selectOption("Cost or access");
+  await decision.getByRole("button", { name: "No FibroScan", exact: true }).click();
   await expect(doctor.getByRole("status").filter({ hasText: "FibroScan not approved" })).toBeVisible();
   await expect(doctor.locator("tr", { hasText: name }).getByText("Not approved", { exact: true })).toBeVisible();
 

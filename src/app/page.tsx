@@ -46,7 +46,7 @@ const journey = [
 const safeguards = [
   {
     title: "No diagnosis by software",
-    text: "The clinician types FIB-4 and the summary. The app never calculates a score or applies a threshold.",
+    text: "The clinician checks FIB-4, with an optional calculator for the values they type, and writes the summary. The app never applies a threshold or interprets a result.",
   },
   {
     title: "AI for logistics only",
