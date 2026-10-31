@@ -39,10 +39,12 @@ const RULES: { [K in JourneyEvent["type"]]: Rule } = {
   LAB_UPLOAD: { roles: ["lab"], from: [STAGE.LAB_BOOKED], to: STAGE.REPORT_IN },
   // Option 1 where the patient sends the existing report through their link.
   PATIENT_UPLOAD: { roles: ["patient"], from: [STAGE.ORDERED], to: STAGE.REPORT_IN },
+  // The clinician summarises the lab report (then the doctor decides on FibroScan) and, later, the FibroScan report
+  // (then the doctor picks the next step).
   CLINICIAN_SUBMIT: {
     roles: ["clinician"],
-    from: [STAGE.REPORT_IN],
-    to: STAGE.REVIEWED,
+    from: [STAGE.REPORT_IN, STAGE.VCTE_REPORT],
+    to: (s) => (s.stage === STAGE.VCTE_REPORT ? STAGE.VCTE_REVIEWED : STAGE.REVIEWED),
     check: (e) => (e.type === "CLINICIAN_SUBMIT" && !e.summaryWritten ? "The clinical summary is required" : null),
   },
   APPROVE_VCTE: { roles: ["doctor"], from: [STAGE.REVIEWED], to: STAGE.VCTE_LINK },
@@ -55,11 +57,15 @@ const RULES: { [K in JourneyEvent["type"]]: Rule } = {
         ? "Pick one of the preset decline reasons"
         : null,
   },
-  REQUEST_REREVIEW: { roles: ["doctor"], from: [STAGE.REVIEWED], to: STAGE.REPORT_IN },
+  REQUEST_REREVIEW: {
+    roles: ["doctor"],
+    from: [STAGE.REVIEWED, STAGE.VCTE_REVIEWED],
+    to: (s) => (s.stage === STAGE.VCTE_REVIEWED ? STAGE.VCTE_REPORT : STAGE.REPORT_IN),
+  },
   CENTRE_UPLOAD: { roles: ["centre"], from: [STAGE.VCTE_BOOKED], to: STAGE.VCTE_REPORT },
   CHOOSE_NEXT_STEP: {
     roles: ["doctor"],
-    from: [STAGE.VCTE_REPORT],
+    from: [STAGE.VCTE_REVIEWED],
     // Routine follow-up is scheduled by the platform straight away; the other two need the patient to book.
     to: (_s, e) => (e.type === "CHOOSE_NEXT_STEP" && e.step === "routine" ? STAGE.NEXT_BOOKED : STAGE.NEXT_LINK),
     check: (e) =>

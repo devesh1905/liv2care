@@ -63,7 +63,18 @@ async function reachFibroscanReport(browser: Browser, name: string) {
   await visit.getByRole("button", { name: "Upload report" }).click();
   await expect(centre.getByRole("status").filter({ hasText: "FibroScan report uploaded" })).toBeVisible();
 
+  // the FibroScan report goes to the clinician first, who summarises it for the doctor
+  const clinician = await signInAs(browser, "clinician");
+  const scanReview = card(clinician, name);
+  await expect(scanReview.getByText("FibroScan report", { exact: true })).toBeVisible();
+  await expect(scanReview.getByLabel(/considers a FibroScan/)).toHaveCount(0);
+  await scanReview.locator("input[name=fib4]").fill("8.1 kPa, CAP 290 (typed)");
+  await scanReview.getByLabel("Clinical summary").fill(`FibroScan summary for ${name}`);
+  await scanReview.getByRole("button", { name: "Send to the treating doctor" }).click();
+  await expect(clinician.getByRole("status").filter({ hasText: "Review sent" })).toBeVisible();
+
   await doctor.goto("/doctor");
+  await expect(card(doctor, name).getByText("8.1 kPa, CAP 290 (typed)")).toBeVisible();
   return { doctor, journeyId };
 }
 
@@ -72,7 +83,7 @@ async function eventsOf(journeyId: string) {
   return data!.map((e) => e.event);
 }
 
-const BASE_EVENTS = ["JOURNEY_STARTED", "EXISTING_REPORT_UPLOADED", "CLINICIAN_SUBMIT", "APPROVE_VCTE", "BOOK", "CENTRE_UPLOAD"];
+const BASE_EVENTS = ["JOURNEY_STARTED", "EXISTING_REPORT_UPLOADED", "CLINICIAN_SUBMIT", "APPROVE_VCTE", "BOOK", "CENTRE_UPLOAD", "CLINICIAN_SUBMIT"];
 
 test("next step: routine follow-up, then the visit is attended", async ({ browser }) => {
   const name = `Routine Person ${Date.now() % 100000}`;

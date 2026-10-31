@@ -24,7 +24,7 @@ const when = (iso: string) =>
 
 const NOTICES: Record<string, string> = {
   "lab-uploaded": "Report uploaded. It is now in the clinician's queue.",
-  "centre-uploaded": "FibroScan report uploaded. It is now with the treating doctor.",
+  "centre-uploaded": "FibroScan report uploaded. It is now with the telemedicine clinician, who sends a summary to the treating doctor.",
   missed: "Marked missed. A reschedule message was sent to the patient (simulated).",
   attended: "Visit marked attended.",
 };
