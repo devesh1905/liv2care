@@ -17,6 +17,7 @@ export const metadata = { title: "Treating doctor" };
 const NOTICES: Record<string, string> = {
   approved: "FibroScan approved. A booking link was sent to the patient (simulated).",
   declined: "FibroScan not approved. The case stays on your dashboard.",
+  "declined-routine": "No FibroScan. A routine follow-up was booked at your clinic and the patient was told (simulated).",
   rereview: "Sent back to the clinician for re-review.",
   urgent: "Marked as urgent. The patient now comes first in the lab's, the clinician's and the FibroScan centre's lists.",
   "not-urgent": "Urgent flag removed.",

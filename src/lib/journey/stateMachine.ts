@@ -51,7 +51,8 @@ const RULES: { [K in JourneyEvent["type"]]: Rule } = {
   DECLINE_VCTE: {
     roles: ["doctor"],
     from: [STAGE.REVIEWED],
-    to: STAGE.DECLINED,
+    // no FibroScan: either close the journey, or book a routine follow-up at the doctor's clinic in some months
+    to: (_s, e) => (e.type === "DECLINE_VCTE" && e.followUpMonths ? STAGE.NEXT_BOOKED : STAGE.DECLINED),
     check: (e) =>
       e.type === "DECLINE_VCTE" && !(DECLINE_REASONS as readonly string[]).includes(e.reason)
         ? "Pick one of the preset decline reasons"

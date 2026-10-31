@@ -44,6 +44,13 @@ describe("allowed transitions", () => {
   });
 });
 
+describe("declining FibroScan with a routine follow-up", () => {
+  it("books the follow-up instead of closing the journey", () => {
+    const d = decide({ stage: STAGE.REVIEWED, missed: false }, { type: "DECLINE_VCTE", reason: "Cost or access", followUpMonths: 6 }, { id: "d", role: "doctor" });
+    expect(d).toMatchObject({ ok: true, next: { stage: STAGE.NEXT_BOOKED } });
+  });
+});
+
 describe("disallowed transitions", () => {
   it("rejects every role and stage combination that is not in the allowed table", () => {
     const events: JourneyEvent[] = [

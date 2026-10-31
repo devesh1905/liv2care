@@ -199,3 +199,21 @@ test("re-review: the doctor sends the report back and the clinician sees it agai
   const { data: journey } = await admin.from("journeys").select("stage").eq("id", journeyId).single();
   expect(journey!.stage).toBe(2);
 });
+
+test("no FibroScan, but a routine follow-up is booked at the doctor's clinic", async ({ browser }) => {
+  const name = `Decline Follow Person ${Date.now() % 100000}`;
+  const { doctor, journeyId } = await reachDecision(browser, name, false);
+
+  const decision = card(doctor, name);
+  await decision.getByLabel("No FibroScan for now, with a reason").selectOption("Not clinically required now");
+  await decision.getByLabel("Then").selectOption("6");
+  await decision.getByRole("button", { name: "No FibroScan", exact: true }).click();
+  await expect(doctor.getByRole("status").filter({ hasText: "routine follow-up was booked" })).toBeVisible();
+
+  const { data: journey } = await admin.from("journeys").select("stage, next_step, decline_reason").eq("id", journeyId).single();
+  expect(journey).toEqual({ stage: 8, next_step: "routine", decline_reason: "Not clinically required now" });
+  const { data: row } = await admin.from("decisions").select("kind, follow_up_months").eq("journey_id", journeyId).single();
+  expect(row).toEqual({ kind: "vcte_decline", follow_up_months: 6 });
+  const { data: booking } = await admin.from("bookings").select("kind, slot_label, status").eq("journey_id", journeyId).single();
+  expect(booking).toEqual({ kind: "routine", slot_label: "In 6 months", status: "booked" });
+});

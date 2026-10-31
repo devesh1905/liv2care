@@ -1,3 +1,5 @@
+-- Also: when the doctor declines a FibroScan they can book a routine follow-up instead (DECLINE_VCTE to stage 8 with a
+-- routine booking and the decision's follow_up_months); apply_journey_event already stores both generically.
 -- The FibroScan report now goes to the telemedicine clinician first: the clinician writes the summary (stage 6, FibroScan
 -- report received), which moves the journey to the new stage 11 (FibroScan reviewed), where the treating doctor picks the
 -- next step. Stage 11 sits between 6 and 7 in the pathway; it is numbered 11 so existing rows keep their numbers.
@@ -135,16 +137,17 @@ begin
 end $$;
 
 
--- FibroScan counts include the new stage 11.
+-- FibroScan counts now come from what happened (the audit trail), not the current stage: a journey can now reach the
+-- follow-up stages without a FibroScan (the doctor declines it and books a routine follow-up), and stage 11 is new.
 create or replace view public.kpi_summary as
 select
   count(*)::int as patients,
   count(*) filter (where j.stage = 9)::int as completed,
   count(*) filter (where j.route = 'order_tests')::int as lab_ordered,
   count(*) filter (where j.route = 'order_tests' and j.stage >= 1)::int as lab_booked,
-  count(*) filter (where j.stage between 4 and 9 or j.stage = 11)::int as fibroscan_approved,
-  count(*) filter (where j.stage between 5 and 9 or j.stage = 11)::int as fibroscan_booked,
-  count(*) filter (where j.stage between 6 and 9 or j.stage = 11)::int as fibroscan_done,
+  count(*) filter (where exists (select 1 from public.journey_events e where e.journey_id = j.id and e.event = 'APPROVE_VCTE'))::int as fibroscan_approved,
+  count(*) filter (where exists (select 1 from public.journey_events e where e.journey_id = j.id and e.event = 'BOOK' and e.from_stage = 4))::int as fibroscan_booked,
+  count(*) filter (where exists (select 1 from public.journey_events e where e.journey_id = j.id and e.event = 'CENTRE_UPLOAD'))::int as fibroscan_done,
   count(*) filter (where j.missed)::int as missed_now,
   (select count(*)::int from public.journey_events e where e.event = 'MARK_MISSED' and public.current_app_role() = 'ops') as missed_total,
   (select count(*)::int from public.tasks t where t.done_at is null and t.due_at < now() and public.current_app_role() = 'ops') as overdue_actions,
