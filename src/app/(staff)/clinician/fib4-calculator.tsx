@@ -18,13 +18,13 @@ const FIELDS = [
  * interpretation. The clinician checks it and puts it in the FIB-4 box. The values are not saved or sent (no names, so the
  * form does not submit them).
  */
-export function Fib4Calculator({ onUse }: { onUse: (value: string) => void }) {
+export function Fib4Calculator({ onUse, defaultOpen = false }: { onUse?: (value: string) => void; defaultOpen?: boolean }) {
   const [values, setValues] = useState<Record<string, string>>({ age: "", ast: "", alt: "", platelets: "" });
   const result = fib4({ age: Number(values.age), ast: Number(values.ast), alt: Number(values.alt), platelets: Number(values.platelets) });
   const filled = Object.values(values).every((v) => v.trim() !== "");
 
   return (
-    <details className="rounded-xl border bg-card p-4">
+    <details open={defaultOpen || undefined} className="rounded-xl border bg-card p-4">
       <summary className="flex cursor-pointer items-center gap-2 font-heading font-bold">
         <Calculator className="size-4 text-primary" aria-hidden="true" />
         FIB-4 calculator
@@ -55,9 +55,11 @@ export function Fib4Calculator({ onUse }: { onUse: (value: string) => void }) {
           )}
         </p>
         <p className="text-xs text-muted-foreground">(Age × AST) ÷ (platelets × √ALT). Check the result against the report before you use it.</p>
-        <Button type="button" variant="outline" disabled={result === null} onClick={() => result !== null && onUse(result.toFixed(2))} className="self-start">
-          Put {result !== null ? result.toFixed(2) : "it"} in the FIB-4 box
-        </Button>
+        {onUse && (
+          <Button type="button" variant="outline" disabled={result === null} onClick={() => result !== null && onUse(result.toFixed(2))} className="self-start">
+            Put {result !== null ? result.toFixed(2) : "it"} in the FIB-4 box
+          </Button>
+        )}
       </div>
     </details>
   );

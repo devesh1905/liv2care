@@ -84,6 +84,15 @@ export function DeclineForm({ journeyId, recommended }: { journeyId: string; rec
           ))}
         </Select>
       </Field>
+      <Field label="Then">
+        <Select name="followUp" defaultValue="none">
+          <option value="none">Close the journey, no follow-up booked</option>
+          <option value="3">Book a routine follow-up in 3 months</option>
+          <option value="6">Book a routine follow-up in 6 months</option>
+          <option value="12">Book a routine follow-up in 12 months</option>
+          <option value="24">Book a routine follow-up in 24 months</option>
+        </Select>
+      </Field>
       <FormMessage error={state.error} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">
         <X aria-hidden="true" />

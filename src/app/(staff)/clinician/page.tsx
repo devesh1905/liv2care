@@ -8,17 +8,19 @@ import { Card } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
 import { STAGE_LABEL, type Stage } from "@/lib/journey/stages";
 import { createClient } from "@/lib/supabase/server";
+import { Fib4Calculator } from "./fib4-calculator";
 import { ReviewForm } from "./review-form";
 
 export const metadata = { title: "Telemedicine clinician" };
 
 type QueueItem = {
   id: string;
+  stage: number;
   updated_at: string;
   urgent: boolean;
   patients: { code: string; name: string; age: number } | null;
   reports: { id: string; kind: string; file_name: string; created_at: string }[];
-  reviews: { id: string }[];
+  reviews: { id: string; report_id: string | null }[];
 };
 
 type SentReview = {
@@ -43,8 +45,9 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
   const [{ data: queue }, { data: reviews }] = await Promise.all([
     supabase
       .from("journeys")
-      .select("id, updated_at, urgent, patients(code, name, age), reports(id, kind, file_name, created_at), reviews(id)")
-      .eq("stage", 2)
+      .select("id, stage, updated_at, urgent, patients(code, name, age), reports(id, kind, file_name, created_at), reviews(id, report_id)")
+      // the lab report (stage 2) and, later, the FibroScan report (stage 6) both come to the clinician first
+      .in("stage", [2, 6])
       .order("updated_at"),
     supabase
       .from("reviews")
@@ -70,6 +73,9 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
         <StatTile label="Sent by you" value={done.length} tone="ok" hint="Most recent eight shown" />
       </div>
 
+      {/* also inside each lab review below, where it can fill the FIB-4 box */}
+      <Fib4Calculator defaultOpen={items.length === 0} />
+
       <section aria-labelledby="queue" className="flex flex-col gap-3">
         <h2 id="queue" className="font-heading text-xl font-extrabold">
           Review queue
@@ -77,12 +83,16 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
         {items.length === 0 && (
           <div className="flex items-start gap-3 rounded-xl border border-dashed bg-card p-6 text-muted-foreground">
             <Inbox className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-            <p>Nothing is waiting. New lab reports appear here as soon as they are uploaded.</p>
+            <p>Nothing is waiting. New lab and FibroScan reports appear here as soon as they are uploaded.</p>
           </div>
         )}
         <div className="grid gap-4 xl:grid-cols-2">
           {items.map((item) => {
             const reports = [...item.reports].sort((a, b) => a.created_at.localeCompare(b.created_at));
+            const scan = item.stage === 6;
+            // a re-review: this kind of report was already reviewed once
+            const kindIds = new Set(item.reports.filter((r) => r.kind === (scan ? "fibroscan" : "lab")).map((r) => r.id));
+            const rereview = item.reviews.some((r) => r.report_id && kindIds.has(r.report_id));
             return (
               <Card key={item.id} className="flex flex-col gap-4">
                 <header className="flex items-start justify-between gap-3">
@@ -91,9 +101,12 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
                     <p className="text-xs text-muted-foreground">
                       {item.patients?.code} · {item.patients?.age} years · waiting since {when(item.updated_at)}
                     </p>
-                    {item.urgent && <UrgentPill />}
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      <span className="w-fit rounded-full bg-info-soft px-2.5 py-0.5 text-xs font-bold text-info">{scan ? "FibroScan report" : "Lab report"}</span>
+                      {item.urgent && <UrgentPill />}
+                    </div>
                   </div>
-                  {item.reviews.length > 0 && (
+                  {rereview && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-warn-soft px-2.5 py-1 text-xs font-bold text-warn">
                       <RotateCcw className="size-3.5" aria-hidden="true" />
                       Re-review requested
@@ -120,7 +133,7 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
                   <p className="text-xs text-muted-foreground">Opening a report is recorded in the audit trail.</p>
                 </div>
 
-                <ReviewForm journeyId={item.id} />
+                <ReviewForm journeyId={item.id} kind={scan ? "fibroscan" : "lab"} />
               </Card>
             );
           })}

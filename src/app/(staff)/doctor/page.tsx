@@ -17,6 +17,7 @@ export const metadata = { title: "Treating doctor" };
 const NOTICES: Record<string, string> = {
   approved: "FibroScan approved. A booking link was sent to the patient (simulated).",
   declined: "FibroScan not approved. The case stays on your dashboard.",
+  "declined-routine": "No FibroScan. A routine follow-up was booked at your clinic and the patient was told (simulated).",
   rereview: "Sent back to the clinician for re-review.",
   urgent: "Marked as urgent. The patient now comes first in the lab's, the clinician's and the FibroScan centre's lists.",
   "not-urgent": "Urgent flag removed.",
@@ -72,19 +73,26 @@ function WorkCard({ item }: { item: WorkItem }) {
 
       {item.stage !== STAGE.NEXT_BOOKED && latest && (
         <div className="flex flex-col gap-2 rounded-xl border bg-card p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Clinician&apos;s review</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+            {item.stage === STAGE.VCTE_REVIEWED ? "Clinician's FibroScan review" : "Clinician's review"}
+          </p>
           <p className="text-sm">
-            <span className="font-semibold">FIB-4 typed by the clinician:</span> {latest.fib4_text}
+            <span className="font-semibold">
+              {item.stage === STAGE.VCTE_REVIEWED ? "FibroScan result typed by the clinician:" : "FIB-4 typed by the clinician:"}
+            </span>{" "}
+            {latest.fib4_text}
           </p>
-          <p
-            className={
-              latest.recommends_vcte
-                ? "w-fit rounded-full bg-info-soft px-2.5 py-0.5 text-xs font-bold text-info"
-                : "w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground"
-            }
-          >
-            {latest.recommends_vcte ? "The clinician recommends a FibroScan" : "The clinician did not recommend a FibroScan"}
-          </p>
+          {item.stage === STAGE.REVIEWED && (
+            <p
+              className={
+                latest.recommends_vcte
+                  ? "w-fit rounded-full bg-info-soft px-2.5 py-0.5 text-xs font-bold text-info"
+                  : "w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground"
+              }
+            >
+              {latest.recommends_vcte ? "The clinician recommends a FibroScan" : "The clinician did not recommend a FibroScan"}
+            </p>
+          )}
           <p className="whitespace-pre-line text-sm text-muted-foreground">{latest.summary}</p>
         </div>
       )}
@@ -131,7 +139,12 @@ function WorkCard({ item }: { item: WorkItem }) {
           )}
         </div>
       )}
-      {item.stage === STAGE.VCTE_REPORT && <NextStepForm journeyId={item.id} />}
+      {item.stage === STAGE.VCTE_REVIEWED && (
+        <div className="flex flex-col gap-3">
+          <NextStepForm journeyId={item.id} />
+          <RereviewButton journeyId={item.id} />
+        </div>
+      )}
       {item.stage === STAGE.NEXT_BOOKED && <FollowUpButtons journeyId={item.id} canMiss={item.next_step !== "routine"} />}
     </Card>
   );
@@ -155,16 +168,16 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">[
       .select(
         "id, stage, next_step, urgent, patients(code, name, age), reviews(fib4_text, summary, recommends_vcte, created_at), reports(id, kind, file_name, created_at), bookings(status, slot_label, created_at, partners(name))",
       )
-      .in("stage", [STAGE.REVIEWED, STAGE.VCTE_REPORT, STAGE.NEXT_BOOKED])
+      .in("stage", [STAGE.REVIEWED, STAGE.VCTE_REVIEWED, STAGE.NEXT_BOOKED])
       .eq("missed", false)
       .order("updated_at"),
   ]);
   const rows = (data ?? []) as JourneyRow[];
   const items = (work ?? []) as unknown as WorkItem[];
-  const decisions = items.filter((i) => i.stage === STAGE.REVIEWED || i.stage === STAGE.VCTE_REPORT);
+  const decisions = items.filter((i) => i.stage === STAGE.REVIEWED || i.stage === STAGE.VCTE_REVIEWED);
   const followUps = items.filter((i) => i.stage === STAGE.NEXT_BOOKED);
 
-  const needsYou = rows.filter((r) => !r.missed && (r.stage === STAGE.REVIEWED || r.stage === STAGE.VCTE_REPORT)).length;
+  const needsYou = rows.filter((r) => !r.missed && (r.stage === STAGE.REVIEWED || r.stage === STAGE.VCTE_REVIEWED)).length;
   const missed = rows.filter((r) => r.missed).length;
   const done = rows.filter((r) => r.stage === STAGE.COMPLETE).length;
   const waiting = rows.length - needsYou - missed - done - rows.filter((r) => r.stage === STAGE.DECLINED).length;
@@ -238,11 +251,7 @@ function DashboardSkeleton() {
 export default function Page(props: PageProps<"/doctor">) {
   return (
     <>
-      <PageHeader
-        title="Treating doctor"
-        description="Identify patients, decide on FibroScan and review outcomes."
-        icon={<Stethoscope className="size-5" />}
-      />
+      <PageHeader title="Treating doctor" description="Identify patients, decide on FibroScan and review outcomes." icon={<Stethoscope className="size-5" />} />
       <Suspense fallback={<DashboardSkeleton />}>
         <Dashboard searchParams={props.searchParams} />
       </Suspense>

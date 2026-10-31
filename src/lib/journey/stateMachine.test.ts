@@ -14,14 +14,17 @@ const ALLOWED: Case[] = [
   { event: { type: "BOOK" }, role: "patient", from: STAGE.ORDERED, to: STAGE.LAB_BOOKED },
   { event: { type: "LAB_UPLOAD" }, role: "lab", from: STAGE.LAB_BOOKED, to: STAGE.REPORT_IN },
   { event: { type: "CLINICIAN_SUBMIT", summaryWritten: true }, role: "clinician", from: STAGE.REPORT_IN, to: STAGE.REVIEWED },
+  // the FibroScan report goes to the clinician too, before the doctor picks the next step
+  { event: { type: "CLINICIAN_SUBMIT", summaryWritten: true }, role: "clinician", from: STAGE.VCTE_REPORT, to: STAGE.VCTE_REVIEWED },
   { event: { type: "APPROVE_VCTE" }, role: "doctor", from: STAGE.REVIEWED, to: STAGE.VCTE_LINK },
   { event: { type: "DECLINE_VCTE", reason: "Cost or access" }, role: "doctor", from: STAGE.REVIEWED, to: STAGE.DECLINED },
   { event: { type: "REQUEST_REREVIEW" }, role: "doctor", from: STAGE.REVIEWED, to: STAGE.REPORT_IN },
+  { event: { type: "REQUEST_REREVIEW" }, role: "doctor", from: STAGE.VCTE_REVIEWED, to: STAGE.VCTE_REPORT },
   { event: { type: "BOOK" }, role: "patient", from: STAGE.VCTE_LINK, to: STAGE.VCTE_BOOKED },
   { event: { type: "CENTRE_UPLOAD" }, role: "centre", from: STAGE.VCTE_BOOKED, to: STAGE.VCTE_REPORT },
-  { event: { type: "CHOOSE_NEXT_STEP", step: "routine" }, role: "doctor", from: STAGE.VCTE_REPORT, to: STAGE.NEXT_BOOKED },
-  { event: { type: "CHOOSE_NEXT_STEP", step: "eval" }, role: "doctor", from: STAGE.VCTE_REPORT, to: STAGE.NEXT_LINK },
-  { event: { type: "CHOOSE_NEXT_STEP", step: "specialist" }, role: "doctor", from: STAGE.VCTE_REPORT, to: STAGE.NEXT_LINK },
+  { event: { type: "CHOOSE_NEXT_STEP", step: "routine" }, role: "doctor", from: STAGE.VCTE_REVIEWED, to: STAGE.NEXT_BOOKED },
+  { event: { type: "CHOOSE_NEXT_STEP", step: "eval" }, role: "doctor", from: STAGE.VCTE_REVIEWED, to: STAGE.NEXT_LINK },
+  { event: { type: "CHOOSE_NEXT_STEP", step: "specialist" }, role: "doctor", from: STAGE.VCTE_REVIEWED, to: STAGE.NEXT_LINK },
   { event: { type: "BOOK" }, role: "patient", from: STAGE.NEXT_LINK, to: STAGE.NEXT_BOOKED },
   { event: { type: "MARK_ATTENDED" }, role: "lab", from: STAGE.NEXT_BOOKED, to: STAGE.COMPLETE },
 ];
@@ -38,6 +41,13 @@ describe("allowed transitions", () => {
       changesStage: false,
       next: { stage: STAGE.LAB_BOOKED },
     });
+  });
+});
+
+describe("declining FibroScan with a routine follow-up", () => {
+  it("books the follow-up instead of closing the journey", () => {
+    const d = decide({ stage: STAGE.REVIEWED, missed: false }, { type: "DECLINE_VCTE", reason: "Cost or access", followUpMonths: 6 }, { id: "d", role: "doctor" });
+    expect(d).toMatchObject({ ok: true, next: { stage: STAGE.NEXT_BOOKED } });
   });
 });
 
