@@ -5,7 +5,6 @@ import {
   BadgeCheck,
   CheckCheck,
   ExternalLink,
-  HeartPulse,
   Mic,
   MoreVertical,
   Paperclip,
@@ -14,6 +13,7 @@ import {
   Smile,
   Wifi,
 } from "lucide-react";
+import { LiverMark } from "@/components/liver-mark";
 import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useRef, useState } from "react";
 
@@ -144,7 +144,7 @@ export function PhoneSimulator({
                 className="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
                 aria-hidden="true"
               >
-                <HeartPulse className="size-5" strokeWidth={2.4} />
+                <LiverMark className="size-6" />
               </span>
               <div className="min-w-0 flex-1 leading-tight">
                 <p className="flex items-center gap-1 truncate text-[15px] font-semibold text-[#111b21]">

@@ -1,4 +1,4 @@
-import { HeartPulse } from "lucide-react";
+import { LiverMark } from "./liver-mark";
 
 /**
  * Decides, before the page is painted, whether to show the splash: only on the home page (staff and patient pages are tools
@@ -20,7 +20,7 @@ export function Splash() {
     >
       <div className="splash-mark flex flex-col items-center gap-4">
         <span className="grid size-20 place-items-center rounded-3xl bg-primary text-primary-foreground shadow-xl shadow-primary/30">
-          <HeartPulse className="splash-beat size-11" strokeWidth={2.2} />
+          <LiverMark className="splash-beat size-14" />
         </span>
         <span className="font-heading text-3xl font-extrabold tracking-tight text-foreground">
           Liv2care
