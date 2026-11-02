@@ -16,14 +16,27 @@ export const metadata = {
   referrer: "no-referrer",
 };
 
-async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">, "params" | "searchParams">) {
+async function Content({
+  params,
+  searchParams,
+}: Pick<PageProps<"/book/[token]">, "params" | "searchParams">) {
   await connection();
   const { token } = await params;
   const wanted = (await searchParams).lang;
   const pick = (await searchParams).pick;
-  const view = await loadBookingView(token, typeof pick === "string" ? pick : undefined);
+  const view = await loadBookingView(
+    token,
+    typeof pick === "string" ? pick : undefined,
+  );
 
-  const lang: Lang = isLang(wanted) ? wanted : view.kind === "ready" || view.kind === "booked" || view.kind === "upload" || view.kind === "uploaded" ? view.language : "en";
+  const lang: Lang = isLang(wanted)
+    ? wanted
+    : view.kind === "ready" ||
+        view.kind === "booked" ||
+        view.kind === "upload" ||
+        view.kind === "uploaded"
+      ? view.language
+      : "en";
   const other: Lang = lang === "en" ? "hi" : "en";
 
   return (
@@ -42,11 +55,19 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
         </div>
       </header>
 
-      <main lang={lang} className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6">
-        <h1 className="font-heading text-2xl font-extrabold sm:text-3xl">{t(lang, "journey")}</h1>
+      <main
+        lang={lang}
+        className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 py-6 text-[17px] leading-relaxed"
+      >
+        <h1 className="font-heading text-[1.75rem] leading-tight font-extrabold sm:text-3xl">
+          {t(lang, "journey")}
+        </h1>
 
         {view.kind === "invalid" && (
-          <p role="alert" className="flex gap-3 rounded-2xl bg-bad-soft p-4 font-medium text-bad">
+          <p
+            role="alert"
+            className="flex gap-3 rounded-2xl bg-bad-soft p-4 font-medium text-bad"
+          >
             <Info className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
             {t(lang, "linkInvalid")}
           </p>
@@ -54,7 +75,10 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
 
         {view.kind === "nothing" && (
           <p className="flex gap-3 rounded-2xl border bg-card p-4">
-            <Info className="mt-0.5 size-5 shrink-0 text-info" aria-hidden="true" />
+            <Info
+              className="mt-0.5 size-5 shrink-0 text-info"
+              aria-hidden="true"
+            />
             {t(lang, "nothingToBook")}
           </p>
         )}
@@ -65,7 +89,9 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
               <p className="text-lg font-semibold">
                 {t(lang, "hello")} {view.firstName}.
               </p>
-              <h2 className="font-heading text-xl font-extrabold text-primary">{t(lang, "uploadTitle")}</h2>
+              <h2 className="font-heading text-[1.375rem] font-extrabold text-primary">
+                {t(lang, "uploadTitle")}
+              </h2>
               <p className="text-muted-foreground">{t(lang, "uploadIntro")}</p>
             </div>
             <UploadForm token={token} lang={lang} />
@@ -77,8 +103,15 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
         {view.kind === "booked" && (
           <section className="flex flex-col gap-3 rounded-2xl border border-ok/30 bg-ok-soft p-5">
             <CircleCheck className="size-8 text-ok" aria-hidden="true" />
-            <h2 className="font-heading text-xl font-extrabold text-ok">{t(lang, "booked")}</h2>
-            <p>{t(lang, "seeYou", { place: view.partnerName, slot: view.slotLabel })}</p>
+            <h2 className="font-heading text-[1.375rem] font-extrabold text-ok">
+              {t(lang, "booked")}
+            </h2>
+            <p>
+              {t(lang, "seeYou", {
+                place: view.partnerName,
+                slot: view.slotLabel,
+              })}
+            </p>
           </section>
         )}
 
@@ -88,13 +121,23 @@ async function Content({ params, searchParams }: Pick<PageProps<"/book/[token]">
               <p className="text-lg font-semibold">
                 {t(lang, "hello")} {view.firstName}.
               </p>
-              <h2 className="flex items-center gap-2 font-heading text-xl font-extrabold text-primary">
+              <h2 className="flex items-center gap-2 font-heading text-[1.375rem] font-extrabold text-primary">
                 <CalendarCheck className="size-5" aria-hidden="true" />
                 {t(lang, TITLE_KEY[view.partnerKind])}
               </h2>
             </div>
-            {view.reschedule && <p className="rounded-2xl bg-warn-soft p-4 font-semibold text-warn">{t(lang, "resched")}</p>}
-            <BookingPicker token={token} lang={lang} options={view.options} homeOptions={view.homeOptions} suggestedSlotId={view.suggestedSlotId} />
+            {view.reschedule && (
+              <p className="rounded-2xl bg-warn-soft p-4 font-semibold text-warn">
+                {t(lang, "resched")}
+              </p>
+            )}
+            <BookingPicker
+              token={token}
+              lang={lang}
+              options={view.options}
+              homeOptions={view.homeOptions}
+              suggestedSlotId={view.suggestedSlotId}
+            />
           </>
         )}
       </main>
@@ -106,7 +149,7 @@ export default function Page(props: PageProps<"/book/[token]">) {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto w-full max-w-2xl px-4 py-6">
+        <main className="mx-auto w-full max-w-2xl px-4 py-6 text-[17px] leading-relaxed">
           <PageSkeleton cards={1} />
         </main>
       }

@@ -1,4 +1,9 @@
-import { CalendarCheck, CircleCheck, FileText, Stethoscope } from "lucide-react";
+import {
+  CalendarCheck,
+  CircleCheck,
+  FileText,
+  Stethoscope,
+} from "lucide-react";
 import { Suspense } from "react";
 import { JourneyTable, type JourneyRow } from "@/components/journey-table";
 import { PageHeader } from "@/components/page-header";
@@ -9,23 +14,36 @@ import { Card } from "@/components/ui/card";
 import { requireRole } from "@/lib/auth/session";
 import { STAGE } from "@/lib/journey/stages";
 import { createClient } from "@/lib/supabase/server";
-import { ApproveButton, DeclineForm, FollowUpButtons, NextStepForm, RereviewButton, UrgentToggle } from "./decision-forms";
+import {
+  ApproveButton,
+  DeclineForm,
+  FollowUpButtons,
+  NextStepForm,
+  RereviewButton,
+  UrgentToggle,
+} from "./decision-forms";
 import { EnrolForm } from "./enrol-form";
 
 export const metadata = { title: "Treating doctor" };
 
 const NOTICES: Record<string, string> = {
-  approved: "FibroScan approved. A booking link was sent to the patient (simulated).",
+  approved:
+    "FibroScan approved. A booking link was sent to the patient (simulated).",
   declined: "FibroScan not approved. The case stays on your dashboard.",
-  "declined-routine": "No FibroScan. A routine follow-up was booked at your clinic and the patient was told (simulated).",
+  "declined-routine":
+    "No FibroScan. A routine follow-up was booked at your clinic and the patient was told (simulated).",
   rereview: "Sent back to the clinician for re-review.",
-  urgent: "Marked as urgent. The patient now comes first in the lab's, the clinician's and the FibroScan centre's lists.",
+  urgent:
+    "Marked as urgent. The patient now comes first in the lab's, the clinician's and the FibroScan centre's lists.",
   "not-urgent": "Urgent flag removed.",
-  routine: "Routine follow-up booked at your clinic. The patient was told (simulated).",
+  routine:
+    "Routine follow-up booked at your clinic. The patient was told (simulated).",
   eval: "Further evaluation ordered. A booking link was sent to the patient (simulated).",
-  specialist: "Specialist referral made. A booking link was sent to the patient (simulated).",
+  specialist:
+    "Specialist referral made. A booking link was sent to the patient (simulated).",
   attended: "Visit marked attended. The journey is complete.",
-  missed: "Marked missed. A reschedule link was sent to the patient (simulated).",
+  missed:
+    "Marked missed. A reschedule link was sent to the patient (simulated).",
 };
 
 type WorkItem = {
@@ -34,9 +52,24 @@ type WorkItem = {
   next_step: string | null;
   urgent: boolean;
   patients: { code: string; name: string; age: number } | null;
-  reviews: { fib4_text: string; summary: string; recommends_vcte: boolean; created_at: string }[];
-  reports: { id: string; kind: string; file_name: string; created_at: string }[];
-  bookings: { status: string; slot_label: string | null; partners: { name: string } | null; created_at: string }[];
+  reviews: {
+    fib4_text: string;
+    summary: string;
+    recommends_vcte: boolean;
+    created_at: string;
+  }[];
+  reports: {
+    id: string;
+    kind: string;
+    file_name: string;
+    created_at: string;
+  }[];
+  bookings: {
+    status: string;
+    slot_label: string | null;
+    partners: { name: string } | null;
+    created_at: string;
+  }[];
 };
 
 const ReportLink = ({ id, label }: { id: string; label: string }) => (
@@ -44,41 +77,56 @@ const ReportLink = ({ id, label }: { id: string; label: string }) => (
     href={`/reports/${id}`}
     target="_blank"
     rel="noopener"
-    className="inline-flex w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-semibold shadow-sm hover:bg-muted"
+    className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-semibold shadow-sm hover:bg-muted"
   >
     <FileText className="size-4 text-primary" aria-hidden="true" />
     {label}
-    <span className="sr-only"> (opens in a new tab; the access is recorded)</span>
+    <span className="sr-only">
+      {" "}
+      (opens in a new tab; the access is recorded)
+    </span>
   </a>
 );
 
 function WorkCard({ item }: { item: WorkItem }) {
-  const latest = [...item.reviews].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const latest = [...item.reviews].sort((a, b) =>
+    b.created_at.localeCompare(a.created_at),
+  )[0];
   const labReports = item.reports.filter((r) => r.kind === "lab");
   const scans = item.reports.filter((r) => r.kind === "fibroscan");
-  const followUp = [...item.bookings].filter((b) => b.status === "booked").sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  const followUp = [...item.bookings]
+    .filter((b) => b.status === "booked")
+    .sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
 
   return (
     <Card className="flex flex-col gap-4">
       <header>
-        <h3 className="font-heading text-lg font-extrabold">{item.patients?.name}</h3>
+        <h3 className="font-heading text-lg font-extrabold">
+          {item.patients?.name}
+        </h3>
         <p className="text-xs text-muted-foreground">
           {item.patients?.code} · {item.patients?.age} years
         </p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           {item.urgent && <UrgentPill />}
-          {item.stage !== STAGE.NEXT_BOOKED && <UrgentToggle journeyId={item.id} urgent={item.urgent} />}
+          {item.stage !== STAGE.NEXT_BOOKED && (
+            <UrgentToggle journeyId={item.id} urgent={item.urgent} />
+          )}
         </div>
       </header>
 
       {item.stage !== STAGE.NEXT_BOOKED && latest && (
         <div className="flex flex-col gap-2 rounded-xl border bg-card p-4">
           <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            {item.stage === STAGE.VCTE_REVIEWED ? "Clinician's FibroScan review" : "Clinician's review"}
+            {item.stage === STAGE.VCTE_REVIEWED
+              ? "Clinician's FibroScan review"
+              : "Clinician's review"}
           </p>
           <p className="text-sm">
             <span className="font-semibold">
-              {item.stage === STAGE.VCTE_REVIEWED ? "FibroScan result typed by the clinician:" : "FIB-4 typed by the clinician:"}
+              {item.stage === STAGE.VCTE_REVIEWED
+                ? "FibroScan result typed by the clinician:"
+                : "FIB-4 typed by the clinician:"}
             </span>{" "}
             {latest.fib4_text}
           </p>
@@ -90,10 +138,14 @@ function WorkCard({ item }: { item: WorkItem }) {
                   : "w-fit rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground"
               }
             >
-              {latest.recommends_vcte ? "The clinician recommends a FibroScan" : "The clinician did not recommend a FibroScan"}
+              {latest.recommends_vcte
+                ? "The clinician recommends a FibroScan"
+                : "The clinician did not recommend a FibroScan"}
             </p>
           )}
-          <p className="whitespace-pre-line text-sm text-muted-foreground">{latest.summary}</p>
+          <p className="whitespace-pre-line text-sm text-muted-foreground">
+            {latest.summary}
+          </p>
         </div>
       )}
 
@@ -101,7 +153,10 @@ function WorkCard({ item }: { item: WorkItem }) {
         <p className="flex items-center gap-2 text-sm">
           <CalendarCheck className="size-4 text-info" aria-hidden="true" />
           <span>
-            <span className="font-semibold">{followUp?.partners?.name ?? "Follow-up"}</span> · {followUp?.slot_label ?? "booked"}
+            <span className="font-semibold">
+              {followUp?.partners?.name ?? "Follow-up"}
+            </span>{" "}
+            · {followUp?.slot_label ?? "booked"}
           </span>
         </p>
       )}
@@ -145,23 +200,42 @@ function WorkCard({ item }: { item: WorkItem }) {
           <RereviewButton journeyId={item.id} />
         </div>
       )}
-      {item.stage === STAGE.NEXT_BOOKED && <FollowUpButtons journeyId={item.id} canMiss={item.next_step !== "routine"} />}
+      {item.stage === STAGE.NEXT_BOOKED && (
+        <FollowUpButtons
+          journeyId={item.id}
+          canMiss={item.next_step !== "routine"}
+        />
+      )}
     </Card>
   );
 }
 
-async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">["searchParams"] }) {
+async function Dashboard({
+  searchParams,
+}: {
+  searchParams: PageProps<"/doctor">["searchParams"];
+}) {
   await requireRole("doctor");
   const raw = (await searchParams).notice;
   const notice = NOTICES[Array.isArray(raw) ? raw[0] : (raw ?? "")];
   // After an action that messages the patient, the notice links to the patient's phone, where that message appears.
   const phoneRaw = (await searchParams).phone;
   const phoneId = Array.isArray(phoneRaw) ? phoneRaw[0] : phoneRaw;
-  const phoneLink = notice && phoneId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(phoneId) ? `/phone/${phoneId}` : null;
+  const phoneLink =
+    notice &&
+    phoneId &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+      phoneId,
+    )
+      ? `/phone/${phoneId}`
+      : null;
   const supabase = await createClient();
 
   const [{ data }, { data: work }] = await Promise.all([
-    supabase.from("journey_status").select("journey_id, patient_code, patient_name, stage, missed, route").order("patient_code"),
+    supabase
+      .from("journey_status")
+      .select("journey_id, patient_code, patient_name, stage, missed, route")
+      .order("patient_code"),
     // Row-level security: only this doctor's journeys, with the reviews and reports they are allowed to read.
     supabase
       .from("journeys")
@@ -174,25 +248,44 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">[
   ]);
   const rows = (data ?? []) as JourneyRow[];
   const items = (work ?? []) as unknown as WorkItem[];
-  const decisions = items.filter((i) => i.stage === STAGE.REVIEWED || i.stage === STAGE.VCTE_REVIEWED);
+  const decisions = items.filter(
+    (i) => i.stage === STAGE.REVIEWED || i.stage === STAGE.VCTE_REVIEWED,
+  );
   const followUps = items.filter((i) => i.stage === STAGE.NEXT_BOOKED);
 
-  const needsYou = rows.filter((r) => !r.missed && (r.stage === STAGE.REVIEWED || r.stage === STAGE.VCTE_REVIEWED)).length;
+  const needsYou = rows.filter(
+    (r) =>
+      !r.missed &&
+      (r.stage === STAGE.REVIEWED || r.stage === STAGE.VCTE_REVIEWED),
+  ).length;
   const missed = rows.filter((r) => r.missed).length;
   const done = rows.filter((r) => r.stage === STAGE.COMPLETE).length;
-  const waiting = rows.length - needsYou - missed - done - rows.filter((r) => r.stage === STAGE.DECLINED).length;
+  const waiting =
+    rows.length -
+    needsYou -
+    missed -
+    done -
+    rows.filter((r) => r.stage === STAGE.DECLINED).length;
 
   return (
     <>
       {notice && (
-        <p role="status" className="flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 font-semibold text-ok">
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 font-semibold text-ok"
+        >
           <CircleCheck className="size-5 shrink-0" aria-hidden="true" />
           <span>
             {notice}
             {phoneLink && (
               <>
                 {" "}
-                <a href={phoneLink} target="_blank" rel="noopener" className="underline underline-offset-4">
+                <a
+                  href={phoneLink}
+                  target="_blank"
+                  rel="noopener"
+                  className="underline underline-offset-4"
+                >
                   See the message on the patient&apos;s phone
                 </a>
               </>
@@ -202,10 +295,30 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/doctor">[
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="Needs your decision" value={needsYou} tone="warn" hint="Review or FibroScan decision" />
-        <StatTile label="With others" value={waiting} tone="info" hint="Patient, lab or clinician" />
-        <StatTile label="Missed" value={missed} tone="bad" hint="Waiting to reschedule" />
-        <StatTile label="Completed" value={done} tone="ok" hint="Next step booked and attended" />
+        <StatTile
+          label="Needs your decision"
+          value={needsYou}
+          tone="warn"
+          hint="Review or FibroScan decision"
+        />
+        <StatTile
+          label="With others"
+          value={waiting}
+          tone="info"
+          hint="Patient, lab or clinician"
+        />
+        <StatTile
+          label="Missed"
+          value={missed}
+          tone="bad"
+          hint="Waiting to reschedule"
+        />
+        <StatTile
+          label="Completed"
+          value={done}
+          tone="ok"
+          hint="Next step booked and attended"
+        />
       </div>
 
       {decisions.length > 0 && (
@@ -251,7 +364,11 @@ function DashboardSkeleton() {
 export default function Page(props: PageProps<"/doctor">) {
   return (
     <>
-      <PageHeader title="Treating doctor" description="Identify patients, decide on FibroScan and review outcomes." icon={<Stethoscope className="size-5" />} />
+      <PageHeader
+        title="Treating doctor"
+        description="Identify patients, decide on FibroScan and review outcomes."
+        icon={<Stethoscope className="size-5" />}
+      />
       <Suspense fallback={<DashboardSkeleton />}>
         <Dashboard searchParams={props.searchParams} />
       </Suspense>

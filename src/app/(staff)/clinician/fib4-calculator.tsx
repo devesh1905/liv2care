@@ -18,14 +18,33 @@ const FIELDS = [
  * interpretation. The clinician checks it and puts it in the FIB-4 box. The values are not saved or sent (no names, so the
  * form does not submit them).
  */
-export function Fib4Calculator({ onUse, defaultOpen = false }: { onUse?: (value: string) => void; defaultOpen?: boolean }) {
-  const [values, setValues] = useState<Record<string, string>>({ age: "", ast: "", alt: "", platelets: "" });
-  const result = fib4({ age: Number(values.age), ast: Number(values.ast), alt: Number(values.alt), platelets: Number(values.platelets) });
+export function Fib4Calculator({
+  onUse,
+  defaultOpen = false,
+}: {
+  onUse?: (value: string) => void;
+  defaultOpen?: boolean;
+}) {
+  const [values, setValues] = useState<Record<string, string>>({
+    age: "",
+    ast: "",
+    alt: "",
+    platelets: "",
+  });
+  const result = fib4({
+    age: Number(values.age),
+    ast: Number(values.ast),
+    alt: Number(values.alt),
+    platelets: Number(values.platelets),
+  });
   const filled = Object.values(values).every((v) => v.trim() !== "");
 
   return (
-    <details open={defaultOpen || undefined} className="rounded-xl border bg-card p-4">
-      <summary className="flex cursor-pointer items-center gap-2 font-heading font-bold">
+    <details
+      open={defaultOpen || undefined}
+      className="rounded-xl border bg-card p-4"
+    >
+      <summary className="flex min-h-11 cursor-pointer items-center gap-2 font-heading font-bold">
         <Calculator className="size-4 text-primary" aria-hidden="true" />
         FIB-4 calculator
       </summary>
@@ -34,13 +53,18 @@ export function Fib4Calculator({ onUse, defaultOpen = false }: { onUse?: (value:
           {FIELDS.map((f) => (
             <label key={f.key} className="flex flex-col gap-1.5">
               <span className="text-sm font-semibold">
-                {f.label} <span className="font-normal text-muted-foreground">({f.unit})</span>
+                {f.label}{" "}
+                <span className="font-normal text-muted-foreground">
+                  ({f.unit})
+                </span>
               </span>
               <Input
                 inputMode="decimal"
                 autoComplete="off"
                 value={values[f.key]}
-                onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                onChange={(e) =>
+                  setValues((v) => ({ ...v, [f.key]: e.target.value }))
+                }
               />
             </label>
           ))}
@@ -48,15 +72,31 @@ export function Fib4Calculator({ onUse, defaultOpen = false }: { onUse?: (value:
         <p role="status" className="text-sm">
           {result !== null ? (
             <>
-              FIB-4: <span className="font-heading text-lg font-extrabold">{result.toFixed(2)}</span>
+              FIB-4:{" "}
+              <span className="font-heading text-lg font-extrabold">
+                {result.toFixed(2)}
+              </span>
             </>
           ) : (
-            <span className="text-muted-foreground">{filled ? "Check the values: one is missing or out of range." : "Type the four values from the report."}</span>
+            <span className="text-muted-foreground">
+              {filled
+                ? "Check the values: one is missing or out of range."
+                : "Type the four values from the report."}
+            </span>
           )}
         </p>
-        <p className="text-xs text-muted-foreground">(Age × AST) ÷ (platelets × √ALT). Check the result against the report before you use it.</p>
+        <p className="text-xs text-muted-foreground">
+          (Age × AST) ÷ (platelets × √ALT). Check the result against the report
+          before you use it.
+        </p>
         {onUse && (
-          <Button type="button" variant="outline" disabled={result === null} onClick={() => result !== null && onUse(result.toFixed(2))} className="self-start">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={result === null}
+            onClick={() => result !== null && onUse(result.toFixed(2))}
+            className="self-start"
+          >
             Put {result !== null ? result.toFixed(2) : "it"} in the FIB-4 box
           </Button>
         )}
