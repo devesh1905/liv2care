@@ -1,4 +1,4 @@
-import { ClipboardList, FlaskConical, Microscope, Stethoscope, Users } from "lucide-react";
+import { ClipboardList, FlaskConical, HeartPulse, Microscope, Stethoscope, Users } from "lucide-react";
 import type { StaffRole } from "@/lib/auth/roles";
 
 export const ROLE_ICON: Record<StaffRole, typeof Stethoscope> = {
@@ -6,6 +6,7 @@ export const ROLE_ICON: Record<StaffRole, typeof Stethoscope> = {
   clinician: ClipboardList,
   lab: FlaskConical,
   centre: Microscope,
+  specialist: HeartPulse,
   ops: Users,
 };
 
@@ -15,5 +16,6 @@ export const ROLE_BLURB: Record<StaffRole, string> = {
   clinician: "Open a patient's report, type the FIB-4 and a short summary, and send it back to the doctor.",
   lab: "Add appointment times, upload a report, and mark visits as attended or missed.",
   centre: "The same for FibroScan visits: upload the scan report and mark the visit.",
+  specialist: "The hepatologist or gastroenterologist: see referred patients with their reports and the clinician's summaries, and mark the visit.",
   ops: "See every patient and what is overdue, send reminders, and read the activity log and the progress numbers.",
 };

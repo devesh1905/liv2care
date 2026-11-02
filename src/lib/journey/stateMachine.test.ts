@@ -64,7 +64,7 @@ describe("disallowed transitions", () => {
       { type: "CHOOSE_NEXT_STEP", step: "routine" },
       { type: "MARK_ATTENDED" },
     ];
-    const roles: Role[] = ["doctor", "clinician", "lab", "centre", "ops", "patient", "system"];
+    const roles: Role[] = ["doctor", "clinician", "lab", "centre", "specialist", "ops", "patient", "system"];
     const bookable: Stage[] = [STAGE.ORDERED, STAGE.VCTE_LINK, STAGE.NEXT_LINK];
     for (const event of events) {
       for (const role of roles) {
@@ -72,8 +72,9 @@ describe("disallowed transitions", () => {
           const listed = ALLOWED.some((c) => c.event.type === event.type && c.role === role && c.from === from);
           // ops may book for the patient (family-assisted booking)
           const opsBooks = event.type === "BOOK" && role === "ops" && bookable.includes(from);
-          // a centre, the doctor's clinic and operations can mark a follow-up visit attended as well as a lab
-          const centreAttends = event.type === "MARK_ATTENDED" && ["centre", "doctor", "ops"].includes(role) && from === STAGE.NEXT_BOOKED;
+          // a centre, a specialist, the doctor's clinic and operations can mark a follow-up visit attended as well as a lab
+          const centreAttends =
+            event.type === "MARK_ATTENDED" && ["centre", "specialist", "doctor", "ops"].includes(role) && from === STAGE.NEXT_BOOKED;
           const d = decide(at(from), event, actor(role));
           expect(d.ok, `${event.type} ${role} @${from}`).toBe(listed || opsBooks || centreAttends);
         }
