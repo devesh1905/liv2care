@@ -9,8 +9,8 @@ describe("journey stages", () => {
     for (const s of stages) expect(STAGE_LABEL[s]).toBeTruthy();
   });
 
-  it("numbers the stages 0 to 10 with no gaps", () => {
-    expect([...stages].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  it("numbers the stages 0 to 11 with no gaps", () => {
+    expect([...stages].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
   });
 
   it("never reports more milestones done than exist", () => {

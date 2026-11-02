@@ -37,7 +37,7 @@ describe("transition()", () => {
   });
 
   it("records the next step and decline reason for the database", async () => {
-    const a = memoryStore({ stage: STAGE.VCTE_REPORT, missed: false });
+    const a = memoryStore({ stage: STAGE.VCTE_REVIEWED, missed: false });
     await transition(a.store, "j1", { type: "CHOOSE_NEXT_STEP", step: "specialist" }, doctor, {}, { decision: { kind: "next_step", nextStep: "specialist" } });
     expect(a.applied[0]).toMatchObject({ nextStep: "specialist", declineReason: null });
 
@@ -130,7 +130,7 @@ describe("transition()", () => {
     expect(m.applied).toHaveLength(1);
 
     // next steps: routine needs months and a booking; the others need the chosen step and no booking
-    m = memoryStore({ stage: STAGE.VCTE_REPORT, missed: false });
+    m = memoryStore({ stage: STAGE.VCTE_REVIEWED, missed: false });
     const step = { type: "CHOOSE_NEXT_STEP", step: "routine" } as const;
     expect(await transition(m.store, "j1", step, doctor, {}, { decision: { kind: "next_step", nextStep: "routine" }, booking: routine.booking })).toMatchObject({ ok: false });
     expect(await transition(m.store, "j1", step, doctor, {}, { decision: { kind: "next_step", nextStep: "routine", followUpMonths: 99 }, booking: routine.booking })).toMatchObject({ ok: false });
@@ -160,6 +160,7 @@ describe("transition()", () => {
       [{ type: "APPROVE_VCTE" }, doctor, approve],
       [{ type: "BOOK" }, patient, booking],
       [{ type: "CENTRE_UPLOAD" }, { id: "c2", role: "centre" }, fibroReport],
+      [{ type: "CLINICIAN_SUBMIT", summaryWritten: true }, { id: "c1", role: "clinician" }, review],
       [{ type: "CHOOSE_NEXT_STEP", step: "routine" }, doctor, routine],
       [{ type: "MARK_ATTENDED" }, lab],
     ] as const;

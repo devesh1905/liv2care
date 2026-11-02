@@ -33,7 +33,8 @@ export type JourneyEvent =
   | { type: "PATIENT_UPLOAD" }
   | { type: "CLINICIAN_SUBMIT"; summaryWritten: boolean }
   | { type: "APPROVE_VCTE" }
-  | { type: "DECLINE_VCTE"; reason: string }
+  /** With followUpMonths, the doctor books a routine follow-up at their clinic instead of closing the journey. */
+  | { type: "DECLINE_VCTE"; reason: string; followUpMonths?: number }
   | { type: "REQUEST_REREVIEW" }
   | { type: "CENTRE_UPLOAD" }
   | { type: "CHOOSE_NEXT_STEP"; step: NextStepType }

@@ -63,7 +63,18 @@ async function reachFibroscanReport(browser: Browser, name: string) {
   await visit.getByRole("button", { name: "Upload report" }).click();
   await expect(centre.getByRole("status").filter({ hasText: "FibroScan report uploaded" })).toBeVisible();
 
+  // the FibroScan report goes to the clinician first, who summarises it for the doctor
+  const clinician = await signInAs(browser, "clinician");
+  const scanReview = card(clinician, name);
+  await expect(scanReview.getByText("FibroScan report", { exact: true })).toBeVisible();
+  await expect(scanReview.getByLabel(/considers a FibroScan/)).toHaveCount(0);
+  await scanReview.locator("input[name=fib4]").fill("8.1 kPa, CAP 290 (typed)");
+  await scanReview.getByLabel("Clinical summary").fill(`FibroScan summary for ${name}`);
+  await scanReview.getByRole("button", { name: "Send to the treating doctor" }).click();
+  await expect(clinician.getByRole("status").filter({ hasText: "Review sent" })).toBeVisible();
+
   await doctor.goto("/doctor");
+  await expect(card(doctor, name).getByText("8.1 kPa, CAP 290 (typed)")).toBeVisible();
   return { doctor, journeyId };
 }
 
@@ -72,7 +83,7 @@ async function eventsOf(journeyId: string) {
   return data!.map((e) => e.event);
 }
 
-const BASE_EVENTS = ["JOURNEY_STARTED", "EXISTING_REPORT_UPLOADED", "CLINICIAN_SUBMIT", "APPROVE_VCTE", "BOOK", "CENTRE_UPLOAD"];
+const BASE_EVENTS = ["JOURNEY_STARTED", "EXISTING_REPORT_UPLOADED", "CLINICIAN_SUBMIT", "APPROVE_VCTE", "BOOK", "CENTRE_UPLOAD", "CLINICIAN_SUBMIT"];
 
 test("next step: routine follow-up, then the visit is attended", async ({ browser }) => {
   const name = `Routine Person ${Date.now() % 100000}`;
@@ -187,4 +198,22 @@ test("re-review: the doctor sends the report back and the clinician sees it agai
   await expect(card(clinician, name).getByText("Re-review requested")).toBeVisible();
   const { data: journey } = await admin.from("journeys").select("stage").eq("id", journeyId).single();
   expect(journey!.stage).toBe(2);
+});
+
+test("no FibroScan, but a routine follow-up is booked at the doctor's clinic", async ({ browser }) => {
+  const name = `Decline Follow Person ${Date.now() % 100000}`;
+  const { doctor, journeyId } = await reachDecision(browser, name, false);
+
+  const decision = card(doctor, name);
+  await decision.getByLabel("No FibroScan for now, with a reason").selectOption("Not clinically required now");
+  await decision.getByLabel("Then").selectOption("6");
+  await decision.getByRole("button", { name: "No FibroScan", exact: true }).click();
+  await expect(doctor.getByRole("status").filter({ hasText: "routine follow-up was booked" })).toBeVisible();
+
+  const { data: journey } = await admin.from("journeys").select("stage, next_step, decline_reason").eq("id", journeyId).single();
+  expect(journey).toEqual({ stage: 8, next_step: "routine", decline_reason: "Not clinically required now" });
+  const { data: row } = await admin.from("decisions").select("kind, follow_up_months").eq("journey_id", journeyId).single();
+  expect(row).toEqual({ kind: "vcte_decline", follow_up_months: 6 });
+  const { data: booking } = await admin.from("bookings").select("kind, slot_label, status").eq("journey_id", journeyId).single();
+  expect(booking).toEqual({ kind: "routine", slot_label: "In 6 months", status: "booked" });
 });

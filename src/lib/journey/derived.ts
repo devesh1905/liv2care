@@ -26,6 +26,7 @@ export function statusOf({ stage, missed }: JourneyState): Status {
     case STAGE.NEXT_BOOKED:
       return { label: "Booked", tone: "info" };
     case STAGE.REVIEWED:
+    case STAGE.VCTE_REVIEWED:
       return { label: "Awaiting doctor", tone: "warn" };
     default:
       return { label: "Received", tone: "ok" };
@@ -44,7 +45,8 @@ const NEXT_BY_STAGE: Record<number, NextAction | null> = {
   [STAGE.REVIEWED]: { who: "Doctor", what: "Decide on FibroScan" },
   [STAGE.VCTE_LINK]: { who: "Patient", what: "Book FibroScan" },
   [STAGE.VCTE_BOOKED]: { who: "Centre", what: "Upload the FibroScan report" },
-  [STAGE.VCTE_REPORT]: { who: "Doctor", what: "Review report and pick the next step" },
+  [STAGE.VCTE_REPORT]: { who: "Clinician", what: "Review the FibroScan report and write the summary" },
+  [STAGE.VCTE_REVIEWED]: { who: "Doctor", what: "Review the summary and pick the next step" },
   [STAGE.NEXT_LINK]: { who: "Patient", what: "Book the appointment" },
   [STAGE.NEXT_BOOKED]: { who: "Clinic", what: "Mark the visit attended" },
   [STAGE.COMPLETE]: null,

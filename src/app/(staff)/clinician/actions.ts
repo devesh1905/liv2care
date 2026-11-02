@@ -22,11 +22,14 @@ export async function submitReview(_prev: ReviewState, form: FormData): Promise<
   const journeyId = String(form.get("journeyId") ?? "");
   const fib4Text = String(form.get("fib4") ?? "").trim();
   const summary = String(form.get("summary") ?? "").trim();
-  const recommendsVcte = form.get("recommends") === "on";
+  const scan = form.get("kind") === "fibroscan";
+  // a FibroScan review carries no FibroScan recommendation
+  const recommendsVcte = !scan && form.get("recommends") === "on";
 
   if (!UUID.test(journeyId)) return { error: "Unknown journey." };
-  if (!fib4Text) return { error: "Type the FIB-4 value." };
-  if (fib4Text.length > 40) return { error: "The FIB-4 field is too long. Type the value only." };
+  const field = scan ? "FibroScan result" : "FIB-4";
+  if (!fib4Text) return { error: `Type the ${field} value.` };
+  if (fib4Text.length > 40) return { error: `The ${field} field is too long. Type the value only.` };
   if (!summary) return { error: "Write the clinical summary." };
   if (summary.length > 4000) return { error: "The summary is longer than 4,000 characters." };
 

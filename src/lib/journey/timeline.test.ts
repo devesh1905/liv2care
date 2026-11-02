@@ -14,7 +14,9 @@ describe("timelineSteps", () => {
   it("marks done steps, then one current step, then upcoming steps", () => {
     expect(statuses(STAGE.ORDERED)).toEqual(["done", "current", ...Array(7).fill("upcoming")]);
     expect(statuses(STAGE.REPORT_IN)).toEqual(["done", "done", "done", "current", ...Array(5).fill("upcoming")]);
-    expect(statuses(STAGE.VCTE_REPORT)).toEqual([...Array(7).fill("done"), "current", "upcoming"]);
+    // the FibroScan report is with the clinician, then with the doctor
+    expect(statuses(STAGE.VCTE_REPORT)).toEqual([...Array(6).fill("done"), "current", "upcoming", "upcoming"]);
+    expect(statuses(STAGE.VCTE_REVIEWED)).toEqual([...Array(7).fill("done"), "current", "upcoming"]);
   });
 
   it("shows every step done when the journey is complete, with no current step", () => {

@@ -88,7 +88,12 @@ const DECISION_KIND_FOR: Record<string, DecisionEffect["kind"]> = {
 
 /** Routine follow-up is booked by the platform at once; every other booking is made by the patient. */
 function takesBooking(event: JourneyEvent): boolean {
-  return event.type === "BOOK" || event.type === "RESCHEDULE" || (event.type === "CHOOSE_NEXT_STEP" && event.step === "routine");
+  return (
+    event.type === "BOOK" ||
+    event.type === "RESCHEDULE" ||
+    (event.type === "CHOOSE_NEXT_STEP" && event.step === "routine") ||
+    (event.type === "DECLINE_VCTE" && !!event.followUpMonths)
+  );
 }
 
 function checkEffects(event: JourneyEvent, effects: Effects): string | null {
@@ -108,6 +113,10 @@ function checkEffects(event: JourneyEvent, effects: Effects): string | null {
   if (!decisionKind) return d ? "This event does not take a decision" : null;
   if (!d || d.kind !== decisionKind) return "A matching decision record is required";
   if (event.type === "DECLINE_VCTE" && d.reason !== event.reason) return "The decision must carry the same preset reason";
+  if (event.type === "DECLINE_VCTE" && event.followUpMonths !== undefined) {
+    if (!(Number.isInteger(event.followUpMonths) && event.followUpMonths >= 1 && event.followUpMonths <= 36)) return "Routine follow-up needs a number of months between 1 and 36";
+    if (d.followUpMonths !== event.followUpMonths) return "The decision must carry the same follow-up months";
+  }
   if (event.type === "CHOOSE_NEXT_STEP") {
     if (d.nextStep !== event.step) return "The decision must name the chosen next step";
     if (event.step === "routine" && !(Number.isInteger(d.followUpMonths) && d.followUpMonths! >= 1 && d.followUpMonths! <= 36)) {
@@ -153,7 +162,7 @@ export async function transition(
       next: decision.next,
       actor,
       detail,
-      nextStep: event.type === "CHOOSE_NEXT_STEP" ? event.step : null,
+      nextStep: event.type === "CHOOSE_NEXT_STEP" ? event.step : event.type === "DECLINE_VCTE" && event.followUpMonths ? "routine" : null,
       declineReason: event.type === "DECLINE_VCTE" ? event.reason : null,
       effects,
       nextTask: taskFor(decision.next),

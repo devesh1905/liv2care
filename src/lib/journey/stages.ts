@@ -14,6 +14,8 @@ export const STAGE = {
   NEXT_BOOKED: 8,
   COMPLETE: 9,
   DECLINED: 10,
+  /** The clinician has summarised the FibroScan report; the doctor picks the next step. Between 6 and 7 in the pathway. */
+  VCTE_REVIEWED: 11,
 } as const;
 
 export type Stage = (typeof STAGE)[keyof typeof STAGE];
@@ -26,6 +28,7 @@ export const STAGE_LABEL: Record<Stage, string> = {
   [STAGE.VCTE_LINK]: "FibroScan approved",
   [STAGE.VCTE_BOOKED]: "FibroScan booked",
   [STAGE.VCTE_REPORT]: "FibroScan report received",
+  [STAGE.VCTE_REVIEWED]: "FibroScan reviewed",
   [STAGE.NEXT_LINK]: "Next step approved",
   [STAGE.NEXT_BOOKED]: "Follow-up booked",
   [STAGE.COMPLETE]: "Journey complete",
@@ -53,7 +56,8 @@ export const MILESTONES_DONE: Record<Stage, number> = {
   [STAGE.REVIEWED]: 4,
   [STAGE.VCTE_LINK]: 5,
   [STAGE.VCTE_BOOKED]: 6,
-  [STAGE.VCTE_REPORT]: 7,
+  [STAGE.VCTE_REPORT]: 6,
+  [STAGE.VCTE_REVIEWED]: 7,
   [STAGE.NEXT_LINK]: 7,
   [STAGE.NEXT_BOOKED]: 8,
   [STAGE.COMPLETE]: 9,

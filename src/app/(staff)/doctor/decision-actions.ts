@@ -62,6 +62,30 @@ export async function declineFibroscan(_prev: DecisionState, form: FormData): Pr
   if ("error" in ctx) return ctx;
   const reason = String(form.get("reason") ?? "");
   if (!(DECLINE_REASONS as readonly string[]).includes(reason)) return { error: "Choose one of the reasons." };
+
+  // Optionally book a routine follow-up at the doctor's clinic instead of closing the journey.
+  const followRaw = String(form.get("followUp") ?? "none");
+  if (followRaw !== "none") {
+    const months = Number(followRaw);
+    if (!MONTHS.includes(months)) return { error: "Choose when the follow-up should be." };
+    const { data: clinic } = await ctx.supabase.from("partners").select("id").eq("kind", "routine").limit(1).maybeSingle();
+    if (!clinic) return { error: "No follow-up clinic is set up." };
+    const result = await run(
+      ctx.journeyId,
+      ctx.doctor.id,
+      { type: "DECLINE_VCTE", reason, followUpMonths: months },
+      { reason, months },
+      {
+        decision: { kind: "vcte_decline", reason, followUpMonths: months },
+        booking: { partnerId: clinic.id, slotId: null, kind: "routine", slotLabel: `In ${months} months` },
+      },
+    );
+    if (!result.ok) return { error: result.error.message };
+    const admin = createAdminClient();
+    await mockProvider(admin).send({ journeyId: ctx.journeyId, channel: "SMS", body: templatesFor(await languageOf(admin, ctx.journeyId)).routineFollowUp(months) }).catch(() => undefined);
+    redirect(`/doctor?notice=declined-routine&phone=${ctx.journeyId}`);
+  }
+
   const result = await run(ctx.journeyId, ctx.doctor.id, { type: "DECLINE_VCTE", reason }, { reason }, { decision: { kind: "vcte_decline", reason } });
   if (!result.ok) return { error: result.error.message };
   redirect("/doctor?notice=declined");
