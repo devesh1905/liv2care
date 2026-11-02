@@ -172,7 +172,7 @@ function ReferralCard({
               href={`/reports/${rep.id}`}
               target="_blank"
               rel="noopener"
-              className="inline-flex w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-semibold shadow-sm hover:bg-muted"
+              className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-semibold shadow-sm hover:bg-muted"
             >
               <FileText className="size-4 text-primary" aria-hidden="true" />
               {rep.kind === "fibroscan"

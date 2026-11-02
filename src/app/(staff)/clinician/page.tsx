@@ -1,4 +1,10 @@
-import { CircleCheck, ClipboardList, FileText, Inbox, RotateCcw } from "lucide-react";
+import {
+  CircleCheck,
+  ClipboardList,
+  FileText,
+  Inbox,
+  RotateCcw,
+} from "lucide-react";
 import { Suspense } from "react";
 import { PageHeader } from "@/components/page-header";
 import { PageSkeleton } from "@/components/skeleton";
@@ -19,7 +25,12 @@ type QueueItem = {
   updated_at: string;
   urgent: boolean;
   patients: { code: string; name: string; age: number } | null;
-  reports: { id: string; kind: string; file_name: string; created_at: string }[];
+  reports: {
+    id: string;
+    kind: string;
+    file_name: string;
+    created_at: string;
+  }[];
   reviews: { id: string; report_id: string | null }[];
 };
 
@@ -29,13 +40,26 @@ type SentReview = {
   summary: string;
   recommends_vcte: boolean;
   created_at: string;
-  journeys: { stage: number; patients: { code: string; name: string } | null } | null;
+  journeys: {
+    stage: number;
+    patients: { code: string; name: string } | null;
+  } | null;
 };
 
 const when = (iso: string) =>
-  new Date(iso).toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+  new Date(iso).toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 
-async function Content({ searchParams }: { searchParams: PageProps<"/clinician">["searchParams"] }) {
+async function Content({
+  searchParams,
+}: {
+  searchParams: PageProps<"/clinician">["searchParams"];
+}) {
   await requireRole("clinician");
   const raw = (await searchParams).notice;
   const sent = (Array.isArray(raw) ? raw[0] : raw) === "sent";
@@ -45,24 +69,33 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
   const [{ data: queue }, { data: reviews }] = await Promise.all([
     supabase
       .from("journeys")
-      .select("id, stage, updated_at, urgent, patients(code, name, age), reports(id, kind, file_name, created_at), reviews(id, report_id)")
+      .select(
+        "id, stage, updated_at, urgent, patients(code, name, age), reports(id, kind, file_name, created_at), reviews(id, report_id)",
+      )
       // the lab report (stage 2) and, later, the FibroScan report (stage 6) both come to the clinician first
       .in("stage", [2, 6])
       .order("updated_at"),
     supabase
       .from("reviews")
-      .select("id, fib4_text, summary, recommends_vcte, created_at, journeys(stage, patients(code, name))")
+      .select(
+        "id, fib4_text, summary, recommends_vcte, created_at, journeys(stage, patients(code, name))",
+      )
       .order("created_at", { ascending: false })
       .limit(8),
   ]);
   // urgent patients first, then the longest waiting
-  const items = ((queue ?? []) as unknown as QueueItem[]).sort((a, b) => Number(b.urgent) - Number(a.urgent));
+  const items = ((queue ?? []) as unknown as QueueItem[]).sort(
+    (a, b) => Number(b.urgent) - Number(a.urgent),
+  );
   const done = (reviews ?? []) as unknown as SentReview[];
 
   return (
     <>
       {sent && (
-        <p role="status" className="flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 font-semibold text-ok">
+        <p
+          role="status"
+          className="flex items-center gap-2 rounded-xl bg-ok-soft px-4 py-3 font-semibold text-ok"
+        >
           <CircleCheck className="size-5 shrink-0" aria-hidden="true" />
           Review sent to the treating doctor, with the original report.
         </p>
@@ -70,7 +103,12 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatTile label="Waiting for review" value={items.length} tone="warn" />
-        <StatTile label="Sent by you" value={done.length} tone="ok" hint="Most recent eight shown" />
+        <StatTile
+          label="Sent by you"
+          value={done.length}
+          tone="ok"
+          hint="Most recent eight shown"
+        />
       </div>
 
       {/* also inside each lab review below, where it can fill the FIB-4 box */}
@@ -83,26 +121,42 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
         {items.length === 0 && (
           <div className="flex items-start gap-3 rounded-xl border border-dashed bg-card p-6 text-muted-foreground">
             <Inbox className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
-            <p>Nothing is waiting. New lab and FibroScan reports appear here as soon as they are uploaded.</p>
+            <p>
+              Nothing is waiting. New lab and FibroScan reports appear here as
+              soon as they are uploaded.
+            </p>
           </div>
         )}
         <div className="grid gap-4 xl:grid-cols-2">
           {items.map((item) => {
-            const reports = [...item.reports].sort((a, b) => a.created_at.localeCompare(b.created_at));
+            const reports = [...item.reports].sort((a, b) =>
+              a.created_at.localeCompare(b.created_at),
+            );
             const scan = item.stage === 6;
             // a re-review: this kind of report was already reviewed once
-            const kindIds = new Set(item.reports.filter((r) => r.kind === (scan ? "fibroscan" : "lab")).map((r) => r.id));
-            const rereview = item.reviews.some((r) => r.report_id && kindIds.has(r.report_id));
+            const kindIds = new Set(
+              item.reports
+                .filter((r) => r.kind === (scan ? "fibroscan" : "lab"))
+                .map((r) => r.id),
+            );
+            const rereview = item.reviews.some(
+              (r) => r.report_id && kindIds.has(r.report_id),
+            );
             return (
               <Card key={item.id} className="flex flex-col gap-4">
                 <header className="flex items-start justify-between gap-3">
                   <div>
-                    <h3 className="font-heading text-lg font-extrabold">{item.patients?.name}</h3>
+                    <h3 className="font-heading text-lg font-extrabold">
+                      {item.patients?.name}
+                    </h3>
                     <p className="text-xs text-muted-foreground">
-                      {item.patients?.code} · {item.patients?.age} years · waiting since {when(item.updated_at)}
+                      {item.patients?.code} · {item.patients?.age} years ·
+                      waiting since {when(item.updated_at)}
                     </p>
                     <div className="mt-1 flex flex-wrap gap-2">
-                      <span className="w-fit rounded-full bg-info-soft px-2.5 py-0.5 text-xs font-bold text-info">{scan ? "FibroScan report" : "Lab report"}</span>
+                      <span className="w-fit rounded-full bg-info-soft px-2.5 py-0.5 text-xs font-bold text-info">
+                        {scan ? "FibroScan report" : "Lab report"}
+                      </span>
                       {item.urgent && <UrgentPill />}
                     </div>
                   </div>
@@ -115,25 +169,42 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
                 </header>
 
                 <div className="flex flex-col gap-2">
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Original report</p>
-                  {reports.length === 0 && <p className="text-sm text-muted-foreground">No report file is attached.</p>}
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                    Original report
+                  </p>
+                  {reports.length === 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No report file is attached.
+                    </p>
+                  )}
                   {reports.map((r) => (
                     <a
                       key={r.id}
                       href={`/reports/${r.id}`}
                       target="_blank"
                       rel="noopener"
-                      className="inline-flex w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-semibold shadow-sm hover:bg-muted"
+                      className="inline-flex min-h-11 w-fit items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm font-semibold shadow-sm hover:bg-muted"
                     >
-                      <FileText className="size-4 text-primary" aria-hidden="true" />
+                      <FileText
+                        className="size-4 text-primary"
+                        aria-hidden="true"
+                      />
                       Open {r.file_name}
-                      <span className="sr-only"> (opens in a new tab; the access is recorded)</span>
+                      <span className="sr-only">
+                        {" "}
+                        (opens in a new tab; the access is recorded)
+                      </span>
                     </a>
                   ))}
-                  <p className="text-xs text-muted-foreground">Opening a report is recorded in the audit trail.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Opening a report is recorded in the audit trail.
+                  </p>
                 </div>
 
-                <ReviewForm journeyId={item.id} kind={scan ? "fibroscan" : "lab"} />
+                <ReviewForm
+                  journeyId={item.id}
+                  kind={scan ? "fibroscan" : "lab"}
+                />
               </Card>
             );
           })}
@@ -147,19 +218,37 @@ async function Content({ searchParams }: { searchParams: PageProps<"/clinician">
           </h2>
           <ul className="grid gap-3 lg:grid-cols-2">
             {done.map((r) => (
-              <li key={r.id} className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-card">
+              <li
+                key={r.id}
+                className="flex flex-col gap-2 rounded-xl border bg-card p-4 shadow-card"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-heading font-extrabold">
-                    {r.journeys?.patients?.name} <span className="text-xs font-normal text-muted-foreground">{r.journeys?.patients?.code}</span>
+                    {r.journeys?.patients?.name}{" "}
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {r.journeys?.patients?.code}
+                    </span>
                   </p>
-                  <span className="shrink-0 text-xs text-muted-foreground">{when(r.created_at)}</span>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {when(r.created_at)}
+                  </span>
                 </div>
                 <p className="text-sm">
-                  <span className="font-semibold">FIB-4 you typed:</span> {r.fib4_text}
-                  {r.recommends_vcte && <span className="ml-2 rounded-full bg-info-soft px-2 py-0.5 text-xs font-bold text-info">FibroScan recommended</span>}
+                  <span className="font-semibold">FIB-4 you typed:</span>{" "}
+                  {r.fib4_text}
+                  {r.recommends_vcte && (
+                    <span className="ml-2 rounded-full bg-info-soft px-2 py-0.5 text-xs font-bold text-info">
+                      FibroScan recommended
+                    </span>
+                  )}
                 </p>
-                <p className="whitespace-pre-line text-sm text-muted-foreground">{r.summary}</p>
-                <p className="text-xs text-muted-foreground">Now: {r.journeys ? STAGE_LABEL[r.journeys.stage as Stage] : ""}</p>
+                <p className="whitespace-pre-line text-sm text-muted-foreground">
+                  {r.summary}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Now:{" "}
+                  {r.journeys ? STAGE_LABEL[r.journeys.stage as Stage] : ""}
+                </p>
               </li>
             ))}
           </ul>

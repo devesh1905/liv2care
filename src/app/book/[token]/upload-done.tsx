@@ -6,7 +6,9 @@ export function UploadDone({ lang }: { lang: Lang }) {
   return (
     <section className="flex flex-col gap-3 rounded-2xl border border-ok/30 bg-ok-soft p-5">
       <CircleCheck className="size-8 text-ok" aria-hidden="true" />
-      <h2 className="font-heading text-xl font-extrabold text-ok">{t(lang, "uploadDoneTitle")}</h2>
+      <h2 className="font-heading text-[1.375rem] font-extrabold text-ok">
+        {t(lang, "uploadDoneTitle")}
+      </h2>
       <p>{t(lang, "uploadDoneText")}</p>
     </section>
   );

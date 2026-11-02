@@ -79,24 +79,20 @@ export default function Home() {
         <Logo />
         <div className="flex items-center gap-2">
           {demo && (
-            <Button render={<Link href="/demo" />} variant="ghost" size="sm">
+            <Button render={<Link href="/demo" />} variant="ghost">
               Demo access
             </Button>
           )}
-          <Button render={<a href="/login" />} variant="outline" size="sm">
+          <Button render={<a href="/login" />} variant="outline">
             Staff sign in
           </Button>
         </div>
       </header>
 
       <main className="flex-1">
-        <section className="mesh-bg mesh-drift relative overflow-hidden border-b">
+        <section className="hero-bg relative overflow-hidden border-b">
           <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.15fr_1fr] lg:py-24">
             <div className="flex flex-col gap-8">
-              <p className="inline-flex w-fit items-center gap-2 rounded-full bg-card px-3 py-1 text-xs font-bold tracking-wide text-primary shadow-sm">
-                <ShieldCheck className="size-4" aria-hidden="true" />
-                Health-a-thon 2026 · Team LIVACARE
-              </p>
               <h1 className="max-w-3xl font-heading text-4xl font-extrabold leading-[1.1] sm:text-5xl lg:text-6xl">
                 Closing the loop on liver-risk care in type 2 diabetes
               </h1>
@@ -128,6 +124,13 @@ export default function Home() {
                   </Button>
                 )}
               </div>
+              <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <ShieldCheck
+                  className="size-4 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
+                Built for Health-a-thon 2026 by Team LIVACARE
+              </p>
             </div>
 
             <figure
@@ -159,7 +162,7 @@ export default function Home() {
                           step.state === "done"
                             ? "grid size-8 shrink-0 place-items-center rounded-full bg-ok text-white"
                             : step.state === "now"
-                              ? "grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground ring-4 ring-primary/20 motion-safe:animate-pulse"
+                              ? "grid size-8 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground ring-4 ring-primary/20"
                               : "grid size-8 shrink-0 place-items-center rounded-full border-2 border-dashed border-primary/50 bg-card"
                         }
                       >
@@ -204,13 +207,11 @@ export default function Home() {
           </h2>
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <article className="flex flex-col gap-3 rounded-2xl border bg-card p-6 shadow-card">
-              <span
-                aria-hidden="true"
-                className="grid size-11 place-items-center rounded-xl bg-secondary text-primary"
-              >
-                <Stethoscope className="size-5" />
-              </span>
-              <h3 className="font-heading text-xl font-extrabold">
+              <h3 className="flex items-center gap-3 font-heading text-xl font-extrabold">
+                <Stethoscope
+                  className="size-6 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
                 For doctors and care teams
               </h3>
               <p className="text-muted-foreground">
@@ -227,13 +228,11 @@ export default function Home() {
               </div>
             </article>
             <article className="flex flex-col gap-3 rounded-2xl border bg-card p-6 shadow-card">
-              <span
-                aria-hidden="true"
-                className="grid size-11 place-items-center rounded-xl bg-secondary text-primary"
-              >
-                <MessageSquareText className="size-5" />
-              </span>
-              <h3 className="font-heading text-xl font-extrabold">
+              <h3 className="flex items-center gap-3 font-heading text-xl font-extrabold">
+                <MessageSquareText
+                  className="size-6 shrink-0 text-primary"
+                  aria-hidden="true"
+                />
                 For patients
               </h3>
               <p className="text-muted-foreground">
@@ -252,7 +251,7 @@ export default function Home() {
 
         <section
           aria-labelledby="pathway"
-          className="blueprint-grid mt-14 border-y"
+          className="mt-14 border-y bg-secondary/40"
         >
           <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6">
             <h2
@@ -265,34 +264,27 @@ export default function Home() {
               {/* blueprint connector: across the cards on wide screens, down the side on phones */}
               <span
                 aria-hidden="true"
-                className="blueprint-line draw-x absolute top-[2.85rem] right-[12%] left-[12%] hidden h-0.5 lg:block"
+                className="blueprint-line draw-x absolute top-[2.15rem] right-[12%] left-[12%] hidden h-0.5 lg:block"
               />
               <span
                 aria-hidden="true"
-                className="blueprint-line-v draw-y absolute top-8 bottom-8 left-[2.6rem] w-0.5 sm:hidden"
+                className="blueprint-line-v draw-y absolute top-8 bottom-8 left-[1.85rem] w-0.5 sm:hidden"
               />
               <ol className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 {steps.map(({ icon: Icon, title, text }, i) => (
                   <li
                     key={title}
-                    className="glass relative flex flex-col gap-3 rounded-xl p-5"
+                    className="relative flex flex-col gap-2 rounded-xl border bg-card p-5 shadow-card"
                   >
-                    <span className="flex items-center justify-between">
-                      <span
+                    <h3 className="flex items-center gap-2 font-heading text-lg font-extrabold">
+                      <Icon
+                        className="size-5 shrink-0 text-primary"
                         aria-hidden="true"
-                        className="grid size-11 place-items-center rounded-xl bg-secondary text-primary"
-                      >
-                        <Icon className="size-5" />
+                      />
+                      <span>
+                        <span className="text-muted-foreground">{i + 1}.</span>{" "}
+                        {title}
                       </span>
-                      <span
-                        aria-hidden="true"
-                        className="font-heading text-sm font-extrabold text-muted-foreground"
-                      >
-                        0{i + 1}
-                      </span>
-                    </span>
-                    <h3 className="font-heading text-lg font-extrabold">
-                      {title}
                     </h3>
                     <p className="text-sm text-muted-foreground">{text}</p>
                   </li>
@@ -324,8 +316,10 @@ export default function Home() {
                 </dt>
                 <dd className="mt-2 text-sm text-muted-foreground">
                   of 11,980 primary-care patients with an indeterminate or
-                  high-risk FIB-4 had elastography. Xiao et al., J Gen Intern
-                  Med, 2024.
+                  high-risk FIB-4 had elastography.
+                  <cite className="mt-1 block text-xs not-italic">
+                    Xiao et al., J Gen Intern Med (2024)
+                  </cite>
                 </dd>
               </div>
               <div className="rounded-xl bg-secondary/60 p-5">
@@ -334,8 +328,10 @@ export default function Home() {
                 </dt>
                 <dd className="mt-2 text-sm text-muted-foreground">
                   of 188 patients with fatty liver disease and an abnormal FIB-4
-                  were referred for elastography or to hepatology. Spann et al.,
-                  Hepatol Commun, 2023.
+                  were referred for elastography or to hepatology.
+                  <cite className="mt-1 block text-xs not-italic">
+                    Spann et al., Hepatol Commun (2023)
+                  </cite>
                 </dd>
               </div>
             </dl>
