@@ -1,7 +1,7 @@
-import { HeartPulse } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LiverMark } from "./liver-mark";
 
-/** Liv2care mark and wordmark. Kanya's icon set replaces the glyph when it lands. */
+/** Liv2care mark (a liver with a heartbeat line) and wordmark. */
 export function Logo({ className, size = "md" }: { className?: string; size?: "md" | "lg" }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5 font-heading font-extrabold tracking-tight", className)}>
@@ -12,7 +12,7 @@ export function Logo({ className, size = "md" }: { className?: string; size?: "m
           size === "lg" ? "size-11" : "size-8",
         )}
       >
-        <HeartPulse className={size === "lg" ? "size-6" : "size-4.5"} strokeWidth={2.4} />
+        <LiverMark className={size === "lg" ? "size-8" : "size-6"} />
       </span>
       <span className={size === "lg" ? "text-2xl" : "text-lg"}>Liv2care</span>
     </span>
