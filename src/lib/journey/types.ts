@@ -2,7 +2,7 @@ import type { Stage } from "./stages";
 
 /** Staff roles are database roles (profiles.role); the patient acts through a booking link. */
 /** "system" is the scheduled reminder job: it may send reminders and nothing else. */
-export type Role = "doctor" | "clinician" | "lab" | "centre" | "ops" | "patient" | "system";
+export type Role = "doctor" | "clinician" | "lab" | "centre" | "specialist" | "ops" | "patient" | "system";
 
 export type Actor = { id: string; role: Role };
 

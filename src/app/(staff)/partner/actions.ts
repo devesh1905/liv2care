@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { ROLE_HOME, type StaffRole } from "@/lib/auth/roles";
 import { requireRole } from "@/lib/auth/session";
 import { transitionJourney } from "@/lib/journey/server";
 import { notifyMissed } from "@/lib/booking/reschedule";
@@ -17,21 +18,26 @@ export type PartnerState = { error?: string; success?: string };
  * Every action revalidates up front, even when it ends in an error. Without it, Next 16.4 fails to re-render the
  * layout after an action that returns without revalidating (InvariantError on the cookies store).
  */
-function refreshPage() {
-  revalidatePath("/partner");
+function refreshPage(role: StaffRole = "lab") {
+  revalidatePath(ROLE_HOME[role]);
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** The lab uploads the lab report; the centre uploads the FibroScan report. */
-export async function uploadReport(_prev: PartnerState, form: FormData): Promise<PartnerState> {
+export async function uploadReport(
+  _prev: PartnerState,
+  form: FormData,
+): Promise<PartnerState> {
   const user = await requireRole("lab", "centre");
   refreshPage();
   const journeyId = String(form.get("journeyId") ?? "");
-  if (!UUID.test(journeyId) || !user.partnerId) return { error: "Unknown visit." };
+  if (!UUID.test(journeyId) || !user.partnerId)
+    return { error: "Unknown visit." };
 
   const file = form.get("report");
-  if (!(file instanceof File) || file.size === 0) return { error: "Choose the report PDF." };
+  if (!(file instanceof File) || file.size === 0)
+    return { error: "Choose the report PDF." };
   const bytes = new Uint8Array(await file.arrayBuffer());
   const checked = checkPdf(bytes, file.name);
   if (!checked.ok) return { error: checked.message };
@@ -39,51 +45,91 @@ export async function uploadReport(_prev: PartnerState, form: FormData): Promise
   // Uploaded as this user: the storage policy allows it only for journeys booked at their own partner.
   const supabase = await createClient();
   const storagePath = `journeys/${journeyId}/${randomUUID()}.pdf`;
-  const up = await supabase.storage.from("reports").upload(storagePath, bytes, { contentType: "application/pdf" });
-  if (up.error) return { error: "That visit is not booked at your site, or the upload failed." };
+  const up = await supabase.storage
+    .from("reports")
+    .upload(storagePath, bytes, { contentType: "application/pdf" });
+  if (up.error)
+    return {
+      error: "That visit is not booked at your site, or the upload failed.",
+    };
 
-  const { data: partner } = await supabase.from("partners").select("name").eq("id", user.partnerId).maybeSingle();
+  const { data: partner } = await supabase
+    .from("partners")
+    .select("name")
+    .eq("id", user.partnerId)
+    .maybeSingle();
   const result = await transitionJourney(
     journeyId,
     { type: user.role === "lab" ? "LAB_UPLOAD" : "CENTRE_UPLOAD" },
     { id: user.id, role: user.role },
     { partner: partner?.name ?? "" },
-    { report: { kind: user.role === "lab" ? "lab" : "fibroscan", partnerId: user.partnerId, storagePath, fileName: checked.safeName } },
+    {
+      report: {
+        kind: user.role === "lab" ? "lab" : "fibroscan",
+        partnerId: user.partnerId,
+        storagePath,
+        fileName: checked.safeName,
+      },
+    },
   );
   if (!result.ok) {
     await createAdminClient().storage.from("reports").remove([storagePath]);
     return { error: result.error.message };
   }
   // The visit leaves this list once uploaded, so confirm on the page itself, not on the card.
-  redirect(`/partner?notice=${user.role === "lab" ? "lab-uploaded" : "centre-uploaded"}`);
+  redirect(
+    `/partner?notice=${user.role === "lab" ? "lab-uploaded" : "centre-uploaded"}`,
+  );
 }
 
-async function simpleEvent(form: FormData, type: "MARK_MISSED" | "MARK_ATTENDED"): Promise<PartnerState> {
-  const user = await requireRole("lab", "centre");
-  refreshPage();
+/** Labs, FibroScan centres and specialists mark their own visits attended or missed. */
+async function simpleEvent(
+  form: FormData,
+  type: "MARK_MISSED" | "MARK_ATTENDED",
+): Promise<PartnerState> {
+  const user = await requireRole("lab", "centre", "specialist");
+  refreshPage(user.role);
   const journeyId = String(form.get("journeyId") ?? "");
   if (!UUID.test(journeyId)) return { error: "Unknown visit." };
 
   // Only a visit booked at this partner (row-level security hides every other journey).
   const supabase = await createClient();
-  const { data: visible } = await supabase.from("journeys").select("id").eq("id", journeyId).maybeSingle();
+  const { data: visible } = await supabase
+    .from("journeys")
+    .select("id")
+    .eq("id", journeyId)
+    .maybeSingle();
   if (!visible) return { error: "That visit is not booked at your site." };
 
   // A visit can only be marked attended or missed once its slot has started. Visits without a recorded slot are not held back.
-  const { data: booked } = await supabase.from("bookings").select("slots(starts_at)").eq("journey_id", journeyId).eq("status", "booked");
+  const { data: booked } = await supabase
+    .from("bookings")
+    .select("slots(starts_at)")
+    .eq("journey_id", journeyId)
+    .eq("status", "booked");
   const upcoming = (booked ?? []).some((b) => {
     const slot = b.slots as unknown as { starts_at: string } | null;
     return slot && new Date(slot.starts_at).getTime() > Date.now();
   });
-  if (upcoming) return { error: "This visit cannot be marked until its slot has started." };
+  if (upcoming)
+    return { error: "This visit cannot be marked until its slot has started." };
 
-  const result = await transitionJourney(journeyId, { type }, { id: user.id, role: user.role });
+  const result = await transitionJourney(
+    journeyId,
+    { type },
+    { id: user.id, role: user.role },
+  );
   if (!result.ok) return { error: result.error.message };
 
   if (type === "MARK_MISSED") {
-    await notifyMissed(createAdminClient(), journeyId, { id: user.id, role: user.role });
+    await notifyMissed(createAdminClient(), journeyId, {
+      id: user.id,
+      role: user.role,
+    });
   }
-  redirect(`/partner?notice=${type === "MARK_MISSED" ? "missed" : "attended"}`);
+  redirect(
+    `${ROLE_HOME[user.role]}?notice=${type === "MARK_MISSED" ? "missed" : "attended"}`,
+  );
 }
 
 export async function markMissed(_prev: PartnerState, form: FormData) {
@@ -94,32 +140,60 @@ export async function markAttended(_prev: PartnerState, form: FormData) {
   return simpleEvent(form, "MARK_ATTENDED");
 }
 
-/** Opens a slot at the user's own lab or centre. Row-level security restricts it to their partner. */
-export async function addSlot(_prev: PartnerState, form: FormData): Promise<PartnerState> {
-  const user = await requireRole("lab", "centre");
-  refreshPage();
+/** Opens a slot at the user's own lab, centre or specialist site. Row-level security restricts it to their partner. */
+export async function addSlot(
+  _prev: PartnerState,
+  form: FormData,
+): Promise<PartnerState> {
+  const user = await requireRole("lab", "centre", "specialist");
+  refreshPage(user.role);
   // Date, hour, minute and AM/PM come as separate fields; clinics are in India, so they are read as IST.
   const field = (name: string) => String(form.get(name) ?? "");
-  const when = parseSlotInput(field("date"), field("hour"), field("minute"), field("period"));
+  const when = parseSlotInput(
+    field("date"),
+    field("hour"),
+    field("minute"),
+    field("period"),
+  );
   if (!user.partnerId || !when) return { error: "Choose a date and time." };
-  if (when.getTime() < Date.now()) return { error: "Choose a time in the future." };
+  if (when.getTime() < Date.now())
+    return { error: "Choose a time in the future." };
 
   // Only a lab can send a collector to a patient's home.
   const home = user.role === "lab" && form.get("home") === "on";
 
   const supabase = await createClient();
-  const { error } = await supabase.from("slots").insert({ partner_id: user.partnerId, starts_at: when.toISOString(), home });
-  if (error) return { error: error.code === "23505" ? "That slot already exists." : "The slot could not be added." };
+  const { error } = await supabase
+    .from("slots")
+    .insert({
+      partner_id: user.partnerId,
+      starts_at: when.toISOString(),
+      home,
+    });
+  if (error)
+    return {
+      error:
+        error.code === "23505"
+          ? "That slot already exists."
+          : "The slot could not be added.",
+    };
   return { success: home ? "Home visit slot added." : "Slot added." };
 }
 
-export async function removeSlot(_prev: PartnerState, form: FormData): Promise<PartnerState> {
-  await requireRole("lab", "centre");
-  refreshPage();
+export async function removeSlot(
+  _prev: PartnerState,
+  form: FormData,
+): Promise<PartnerState> {
+  const user = await requireRole("lab", "centre", "specialist");
+  refreshPage(user.role);
   const id = String(form.get("slotId") ?? "");
   if (!UUID.test(id)) return { error: "Unknown slot." };
   const supabase = await createClient();
-  const { error } = await supabase.from("slots").delete().eq("id", id).eq("taken", false);
+  const { error } = await supabase
+    .from("slots")
+    .delete()
+    .eq("id", id)
+    .eq("taken", false);
   if (error) return { error: "The slot could not be removed." };
   return {};
 }

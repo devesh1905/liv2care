@@ -43,7 +43,7 @@ export async function demoLogin(form: FormData) {
 /**
  * One-click sign-in for the hosted demo: no password is typed or stored anywhere. The server asks Supabase for a one-time
  * sign-in token for that role's demo account and redeems it straight away, so the visitor lands on the role's page.
- * Only the five fixed demo accounts, and only while DEMO_LOGINS=on: turn it off after the demo, because anyone who opens
+ * Only the fixed demo accounts (one per staff role), and only while DEMO_LOGINS=on: turn it off after the demo, because anyone who opens
  * /demo can then act as any demo role.
  */
 export async function quickDemoSignIn(form: FormData) {

@@ -36,6 +36,7 @@ const ROLE_LABEL: Record<string, string> = {
   clinician: "Clinician",
   lab: "Lab",
   centre: "Centre",
+  specialist: "Specialist",
   ops: "Operations",
   patient: "Patient",
 };
