@@ -33,7 +33,8 @@ insert into demo_users values
   ('00000000-0000-4000-8000-000000000002', 'clinician@demo.liv2care.test', 'clinician', 'Dr. S. Kapoor', null),
   ('00000000-0000-4000-8000-000000000003', 'lab@demo.liv2care.test', 'lab', 'Sunrise Diagnostics desk', '00000000-0000-4000-8000-0000000000a1'),
   ('00000000-0000-4000-8000-000000000004', 'centre@demo.liv2care.test', 'centre', 'Hepatic Imaging Centre desk', '00000000-0000-4000-8000-0000000000b1'),
-  ('00000000-0000-4000-8000-000000000005', 'ops@demo.liv2care.test', 'ops', 'Operations desk', null);
+  ('00000000-0000-4000-8000-000000000005', 'ops@demo.liv2care.test', 'ops', 'Operations desk', null),
+  ('00000000-0000-4000-8000-000000000006', 'specialist@demo.liv2care.test', 'specialist', 'Dr. A. Mehta, hepatologist', '00000000-0000-4000-8000-0000000000d1');
 
 insert into auth.users (instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
   raw_app_meta_data, raw_user_meta_data, created_at, updated_at,

@@ -3,13 +3,14 @@ import type { Role } from "@/lib/journey/types";
 /** Staff roles stored in profiles.role. The patient has no account; they use booking links. */
 export type StaffRole = Exclude<Role, "patient" | "system">;
 
-export const STAFF_ROLES: readonly StaffRole[] = ["doctor", "clinician", "lab", "centre", "ops"];
+export const STAFF_ROLES: readonly StaffRole[] = ["doctor", "clinician", "lab", "centre", "specialist", "ops"];
 
 export const ROLE_LABEL: Record<StaffRole, string> = {
   doctor: "Treating doctor",
   clinician: "Telemedicine clinician",
   lab: "Lab",
   centre: "FibroScan centre",
+  specialist: "Specialist",
   ops: "Operations",
 };
 
@@ -19,6 +20,7 @@ export const ROLE_HOME: Record<StaffRole, string> = {
   clinician: "/clinician",
   lab: "/partner",
   centre: "/partner",
+  specialist: "/specialist",
   ops: "/ops",
 };
 
@@ -27,6 +29,7 @@ export const AREA_ROLES: Record<string, readonly StaffRole[]> = {
   "/doctor": ["doctor"],
   "/clinician": ["clinician"],
   "/partner": ["lab", "centre"],
+  "/specialist": ["specialist"],
   "/ops": ["ops"],
   // the patient's-phone view for the demo: the doctor and operations, for patients they may already see
   "/phone": ["doctor", "ops"],
