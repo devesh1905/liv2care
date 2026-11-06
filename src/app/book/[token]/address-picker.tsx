@@ -17,9 +17,9 @@ const INDIA_CENTRE: [number, number] = [20.5937, 78.9629];
 const PHOTON = "https://photon.komoot.io";
 // India's bounding box (west, south, east, north), so a search finds Indian places first.
 const INDIA_BBOX = "68.1,6.5,97.4,35.7";
-// Map tiles: CARTO's free basemap, drawn from OpenStreetMap data.
-const TILES = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-const TILE_CREDIT = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
+// Map tiles: Esri's World Street Map, served without a key. (OpenStreetMap's servers block some visitors, CARTO now needs a key.)
+const TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+const TILE_CREDIT = "Tiles &copy; Esri";
 
 type Feature = { geometry: { coordinates: [number, number] }; properties: Record<string, string | undefined> };
 
@@ -28,7 +28,8 @@ function fromPlace(p: Feature["properties"] | undefined): Partial<Fields> {
   if (!p) return {};
   return {
     street: p.street ?? "",
-    area: p.locality ?? p.district ?? p.city ?? "",
+    // A searched area (for example "Andheri East") is its own name; a house or street sits inside a locality or district.
+    area: p.locality ?? (p.type && !["house", "street"].includes(p.type) ? p.name : undefined) ?? p.district ?? p.city ?? "",
     pincode: /^\d{6}$/.test(p.postcode ?? "") ? (p.postcode as string) : "",
   };
 }
@@ -36,7 +37,7 @@ function fromPlace(p: Feature["properties"] | undefined): Partial<Fields> {
 /**
  * The home-collection address, taken the way delivery apps take it: search or use the phone's location, drop and drag a pin,
  * then fill in house or flat number, block, street, area, landmark and pincode. The pin is optional; the details are not.
- * Map data comes from OpenStreetMap (tiles from CARTO, search from Photon), free for a pilot (a paid maps service would replace it at scale).
+ * Map data comes from OpenStreetMap (search from Photon) on Esri map tiles, free for a pilot (a paid maps service would replace it at scale).
  */
 export function AddressPicker({ lang }: { lang: Lang }) {
   const [fields, setFields] = useState<Fields>(EMPTY);
@@ -123,7 +124,7 @@ export function AddressPicker({ lang }: { lang: Lang }) {
       const L = (await import("leaflet")).default;
       if (gone || !mapNode.current || map.current) return;
       const m = L.map(mapNode.current, { center: INDIA_CENTRE, zoom: 4, scrollWheelZoom: false });
-      L.tileLayer(TILES, { maxZoom: 19, subdomains: "abcd", attribution: TILE_CREDIT }).addTo(m);
+      L.tileLayer(TILES, { maxZoom: 19, attribution: TILE_CREDIT }).addTo(m);
       m.on("click", (e: { latlng: { lat: number; lng: number } }) => place({ lat: e.latlng.lat, lon: e.latlng.lng }, true));
       map.current = m;
       setReady(true);
