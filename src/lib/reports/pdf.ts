@@ -1,11 +1,13 @@
-export const MAX_REPORT_BYTES = 5 * 1024 * 1024;
+import { MAX_REPORT_BYTES } from "./limit";
+
+export { MAX_REPORT_BYTES };
 
 export type PdfCheck = { ok: true; safeName: string } | { ok: false; message: string };
 
 /** Accepts only a non-empty PDF within the size limit. Checks the file header, not just the extension. */
 export function checkPdf(bytes: Uint8Array, fileName: string): PdfCheck {
   if (bytes.length === 0) return { ok: false, message: "The file is empty." };
-  if (bytes.length > MAX_REPORT_BYTES) return { ok: false, message: "The file is larger than 5 MB." };
+  if (bytes.length > MAX_REPORT_BYTES) return { ok: false, message: "The file is larger than 4 MB." };
   const header = String.fromCharCode(...bytes.slice(0, 5));
   if (header !== "%PDF-") return { ok: false, message: "Only PDF files are accepted." };
   return { ok: true, safeName: safeFileName(fileName) };
@@ -29,11 +31,11 @@ const isPng = (b: Uint8Array) => b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e
 
 /**
  * Accepts a PDF, or a photo (JPEG or PNG) of a paper report, and returns a PDF either way. A photo is placed on one A4
- * page. The file type is read from the file's own bytes, not from its name. Same 5 MB limit as a PDF.
+ * page. The file type is read from the file's own bytes, not from its name. Same 4 MB limit as a PDF.
  */
 export async function normaliseReport(bytes: Uint8Array, fileName: string): Promise<ReportFile> {
   if (bytes.length === 0) return { ok: false, message: "The file is empty." };
-  if (bytes.length > MAX_REPORT_BYTES) return { ok: false, message: "The file is larger than 5 MB." };
+  if (bytes.length > MAX_REPORT_BYTES) return { ok: false, message: "The file is larger than 4 MB." };
 
   const pdf = checkPdf(bytes, fileName);
   if (pdf.ok) return { ok: true, bytes, safeName: pdf.safeName };

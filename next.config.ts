@@ -28,8 +28,8 @@ const sameOriginFrameHeaders = securityHeaders.map((h) =>
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
-  // A report is up to 5 MB; the default limit for a form submission is 1 MB, which would refuse most PDFs and photos.
-  experimental: { serverActions: { bodySizeLimit: "6mb" } },
+  // A report is up to 4 MB (Vercel refuses request bodies over 4.5 MB); the default limit for a form submission is 1 MB.
+  experimental: { serverActions: { bodySizeLimit: "4.5mb" } },
   partialPrefetching: true,
   async headers() {
     return [

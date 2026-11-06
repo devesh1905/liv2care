@@ -3,6 +3,7 @@
 import { CalendarPlus, Check, Trash2, Upload, X } from "lucide-react";
 import { useActionState, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { limitReportSize } from "@/lib/reports/limit";
 import { CheckRow, Field, FormMessage, Input, Select } from "@/components/ui/field";
 import { addSlot, markAttended, markMissed, removeSlot, uploadReport, type PartnerState } from "./actions";
 
@@ -13,11 +14,12 @@ export function UploadForm({ journeyId, label }: { journeyId: string; label: str
   return (
     <form action={action} className="flex flex-col gap-3 rounded-xl bg-secondary/60 p-4">
       <input type="hidden" name="journeyId" value={journeyId} />
-      <Field label={label} hint="PDF, up to 5 MB">
+      <Field label={label} hint="PDF, up to 4 MB">
         <input
           name="report"
           type="file"
           accept="application/pdf"
+          onChange={limitReportSize("This file is larger than 4 MB. Please upload a smaller PDF.")}
           required
           className="text-sm file:mr-3 file:h-10 file:rounded-lg file:border file:bg-card file:px-4 file:font-heading file:font-semibold"
         />
