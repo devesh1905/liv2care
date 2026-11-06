@@ -28,7 +28,8 @@ function fromPlace(p: Feature["properties"] | undefined): Partial<Fields> {
   if (!p) return {};
   return {
     street: p.street ?? "",
-    area: p.locality ?? p.district ?? p.city ?? "",
+    // A searched area (for example "Andheri East") is its own name; a house or street sits inside a locality or district.
+    area: p.locality ?? (p.type && !["house", "street"].includes(p.type) ? p.name : undefined) ?? p.district ?? p.city ?? "",
     pincode: /^\d{6}$/.test(p.postcode ?? "") ? (p.postcode as string) : "",
   };
 }
