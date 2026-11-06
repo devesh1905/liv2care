@@ -151,9 +151,9 @@ test.describe("enrolling a patient", () => {
     await file.setInputFiles({ name: "broken.jpg", mimeType: "image/jpeg", buffer: Buffer.from([0xff, 0xd8, 0xff, 0x00, 0x01]) });
     await enrol();
     await refused("could not be read");
-    await file.setInputFiles({ name: "big.pdf", mimeType: "application/pdf", buffer: Buffer.concat([Buffer.from("%PDF-1.4 "), Buffer.alloc(5 * 1024 * 1024)]) });
+    await file.setInputFiles({ name: "big.pdf", mimeType: "application/pdf", buffer: Buffer.concat([Buffer.from("%PDF-1.4 "), Buffer.alloc(4 * 1024 * 1024 + 64 * 1024)]) });
     await enrol();
-    await refused("larger than 5 MB");
+    await refused("larger than 4 MB");
 
     const { count } = await admin.from("patients").select("id", { count: "exact", head: true }).eq("name", name);
     expect(count).toBe(0);
