@@ -131,6 +131,7 @@ export function PhoneSimulator({
               src={open}
               className="min-h-0 w-full flex-1 border-0 bg-white"
               sandbox="allow-same-origin allow-scripts allow-forms"
+              allow="geolocation"
             />
           </>
         ) : (
