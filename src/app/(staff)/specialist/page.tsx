@@ -195,7 +195,7 @@ function ReferralCard({
       {(canAttend || canMiss) && (
         <div className="flex flex-wrap gap-3">
           {canAttend && (
-            <AttendedButton journeyId={r.journey_id} waitUntil={waitUntil} />
+            <AttendedButton journeyId={r.journey_id} />
           )}
           {canMiss && (
             <MissedButton journeyId={r.journey_id} waitUntil={waitUntil} />

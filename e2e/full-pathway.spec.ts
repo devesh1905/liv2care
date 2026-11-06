@@ -6,7 +6,6 @@ import {
   PARTNER,
   PDF,
   signInAs,
-  startVisitNow,
 } from "./helpers";
 
 /**
@@ -254,8 +253,8 @@ for (const next of [
     const followUp = card(doctor, name);
     await expect(followUp.getByText(next.place)).toBeVisible();
     if (next.key === "specialist") {
-      // the specialist sees the referral with both of the clinician's summaries and the reports, and marks the visit
-      await startVisitNow(journeyId);
+      // the specialist sees the referral with both of the clinician's summaries and the reports, and can mark the visit
+      // attended before the slot starts (patients are often seen early); missed still waits for the slot
       const specialist = await signInAs(browser, "specialist");
       await specialist.goto("/specialist");
       const referral = card(specialist, name);
@@ -274,6 +273,7 @@ for (const next of [
       await expect(
         referral.getByRole("link", { name: /Open lab report/ }),
       ).toBeVisible();
+      await expect(referral.getByRole("button", { name: "Mark missed" })).toBeDisabled();
       await referral.getByRole("button", { name: "Mark attended" }).click();
       await expect(
         specialist
