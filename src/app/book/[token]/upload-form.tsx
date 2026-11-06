@@ -3,6 +3,7 @@
 import { FileUp } from "lucide-react";
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
+import { limitReportSize } from "@/lib/reports/limit";
 import { FormMessage } from "@/components/ui/field";
 import { t, type Lang } from "@/lib/i18n/patient";
 import { sendReport, type UploadState } from "./actions";
@@ -26,6 +27,7 @@ export function UploadForm({ token, lang }: { token: string; lang: Lang }) {
           name="report"
           type="file"
           accept="application/pdf,image/jpeg,image/png"
+          onChange={limitReportSize(t(lang, "tooLarge"))}
           required
           className="text-sm file:mr-3 file:h-11 file:rounded-lg file:border file:bg-card file:px-4 file:font-heading file:font-semibold"
         />

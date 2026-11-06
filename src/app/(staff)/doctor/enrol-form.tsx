@@ -3,6 +3,7 @@
 import { FileUp, FlaskConical, UserPlus } from "lucide-react";
 import { useActionState, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { limitReportSize } from "@/lib/reports/limit";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { CheckRow, Field, FormMessage, Input, Select } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
@@ -161,11 +162,12 @@ export function EnrolForm() {
               The patient will upload the report. Send them a private link to do it from their phone.
             </CheckRow>
             {!patientUploads && (
-              <Field label="Existing lab report" hint="A PDF or a photo (JPEG or PNG), up to 5 MB">
+              <Field label="Existing lab report" hint="A PDF or a photo (JPEG or PNG), up to 4 MB">
                 <input
                   name="report"
                   type="file"
                   accept="application/pdf,image/jpeg,image/png"
+                  onChange={limitReportSize("This file is larger than 4 MB. Please choose a smaller file or a photo.")}
                   required
                   className="text-sm file:mr-3 file:h-10 file:rounded-lg file:border file:bg-card file:px-4 file:font-heading file:font-semibold"
                 />
