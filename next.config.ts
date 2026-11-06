@@ -26,6 +26,12 @@ const sameOriginFrameHeaders = securityHeaders.map((h) =>
         : h,
 );
 
+// The "patient's phone" view shows the patient's pages in a frame. A frame can only use location if its parent page may,
+// so this page allows it too (it still may not be framed itself).
+const phoneViewHeaders = securityHeaders.map((h) =>
+  h.key === "Permissions-Policy" ? { ...h, value: h.value.replace("geolocation=()", "geolocation=(self)") } : h,
+);
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   // A report is up to 4 MB (Vercel refuses request bodies over 4.5 MB); the default limit for a form submission is 1 MB.
@@ -34,7 +40,8 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       // Staff pages and everything else may not be framed at all.
-      { source: "/((?!book/|patient/).*)", headers: securityHeaders },
+      { source: "/((?!book/|patient/|phone/).*)", headers: securityHeaders },
+      { source: "/phone/:path*", headers: phoneViewHeaders },
       // The patient's own pages may be framed by this site only: the "patient's phone" view shows them inside a phone.
       { source: "/:page(book|patient)/:path*", headers: sameOriginFrameHeaders },
     ];

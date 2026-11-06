@@ -13,24 +13,30 @@ type Fields = { house: string; block: string; street: string; area: string; land
 
 const EMPTY: Fields = { house: "", block: "", street: "", area: "", landmark: "", pincode: "" };
 const INDIA_CENTRE: [number, number] = [20.5937, 78.9629];
-const NOMINATIM = "https://nominatim.openstreetmap.org";
+// Address search and pin look-up: Photon (OpenStreetMap data, no key). OpenStreetMap's own servers block busy sites.
+const PHOTON = "https://photon.komoot.io";
+// India's bounding box (west, south, east, north), so a search finds Indian places first.
+const INDIA_BBOX = "68.1,6.5,97.4,35.7";
+// Map tiles: CARTO's free basemap, drawn from OpenStreetMap data.
+const TILES = "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+const TILE_CREDIT = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
-type Place = { lat: string; lon: string; address?: Record<string, string> };
+type Feature = { geometry: { coordinates: [number, number] }; properties: Record<string, string | undefined> };
 
 /** What a map search or a pin tells us about the place. Only used to fill empty boxes, which the patient can always change. */
-function fromPlace(address: Record<string, string> | undefined): Partial<Fields> {
-  if (!address) return {};
+function fromPlace(p: Feature["properties"] | undefined): Partial<Fields> {
+  if (!p) return {};
   return {
-    street: address.road ?? address.pedestrian ?? "",
-    area: address.suburb ?? address.neighbourhood ?? address.city_district ?? address.village ?? address.town ?? address.city ?? "",
-    pincode: /^\d{6}$/.test(address.postcode ?? "") ? address.postcode : "",
+    street: p.street ?? "",
+    area: p.locality ?? p.district ?? p.city ?? "",
+    pincode: /^\d{6}$/.test(p.postcode ?? "") ? (p.postcode as string) : "",
   };
 }
 
 /**
  * The home-collection address, taken the way delivery apps take it: search or use the phone's location, drop and drag a pin,
  * then fill in house or flat number, block, street, area, landmark and pincode. The pin is optional; the details are not.
- * Map data comes from OpenStreetMap, which is free for a pilot (a paid maps service would replace it at scale).
+ * Map data comes from OpenStreetMap (tiles from CARTO, search from Photon), free for a pilot (a paid maps service would replace it at scale).
  */
 export function AddressPicker({ lang }: { lang: Lang }) {
   const [fields, setFields] = useState<Fields>(EMPTY);
@@ -56,8 +62,8 @@ export function AddressPicker({ lang }: { lang: Lang }) {
 
   async function reverse(p: Point) {
     try {
-      const res = await fetch(`${NOMINATIM}/reverse?format=jsonv2&addressdetails=1&accept-language=en&lat=${p.lat}&lon=${p.lon}`);
-      if (res.ok) fillEmpty(fromPlace(((await res.json()) as Place).address));
+      const res = await fetch(`${PHOTON}/reverse?lang=en&lat=${p.lat}&lon=${p.lon}`);
+      if (res.ok) fillEmpty(fromPlace(((await res.json()) as { features?: Feature[] }).features?.[0]?.properties));
     } catch {
       // the patient can type the details
     }
@@ -94,11 +100,12 @@ export function AddressPicker({ lang }: { lang: Lang }) {
     if (q.length < 3) return;
     setBusy(true);
     try {
-      const res = await fetch(`${NOMINATIM}/search?format=jsonv2&addressdetails=1&limit=1&countrycodes=in&accept-language=en&q=${encodeURIComponent(q)}`);
-      const [first] = res.ok ? ((await res.json()) as Place[]) : [];
+      const res = await fetch(`${PHOTON}/api/?limit=1&lang=en&bbox=${INDIA_BBOX}&q=${encodeURIComponent(q)}`);
+      const first = res.ok ? ((await res.json()) as { features?: Feature[] }).features?.[0] : undefined;
       if (first) {
-        place({ lat: Number(first.lat), lon: Number(first.lon) }, false);
-        fillEmpty(fromPlace(first.address));
+        const [lon, lat] = first.geometry.coordinates;
+        place({ lat, lon }, false);
+        fillEmpty(fromPlace(first.properties));
       } else {
         setNote(t(lang, "addrNotFound"));
       }
@@ -116,7 +123,7 @@ export function AddressPicker({ lang }: { lang: Lang }) {
       const L = (await import("leaflet")).default;
       if (gone || !mapNode.current || map.current) return;
       const m = L.map(mapNode.current, { center: INDIA_CENTRE, zoom: 4, scrollWheelZoom: false });
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19, attribution: "© OpenStreetMap" }).addTo(m);
+      L.tileLayer(TILES, { maxZoom: 19, subdomains: "abcd", attribution: TILE_CREDIT }).addTo(m);
       m.on("click", (e: { latlng: { lat: number; lng: number } }) => place({ lat: e.latlng.lat, lon: e.latlng.lng }, true));
       map.current = m;
       setReady(true);
