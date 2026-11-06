@@ -102,6 +102,8 @@ async function simpleEvent(
   if (!visible) return { error: "That visit is not booked at your site." };
 
   // A visit can only be marked attended or missed once its slot has started. Visits without a recorded slot are not held back.
+  // A specialist may mark a patient attended before the slot (patients are often seen early); missed still waits for the slot.
+  const earlyAllowed = user.role === "specialist" && type === "MARK_ATTENDED";
   const { data: booked } = await supabase
     .from("bookings")
     .select("slots(starts_at)")
@@ -111,7 +113,7 @@ async function simpleEvent(
     const slot = b.slots as unknown as { starts_at: string } | null;
     return slot && new Date(slot.starts_at).getTime() > Date.now();
   });
-  if (upcoming)
+  if (upcoming && !earlyAllowed)
     return { error: "This visit cannot be marked until its slot has started." };
 
   const result = await transitionJourney(
