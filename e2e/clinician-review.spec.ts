@@ -41,6 +41,12 @@ test("clinician reviews an existing report and sends it to the doctor", async ({
   // 4. The clinician types the review and sends it
   // the calculator works the number out from values the clinician types; the clinician still decides what is sent
   await card.getByText("FIB-4 calculator").click();
+  await expect(
+    card.getByRole("note").filter({
+      hasText:
+        "For clinician assistance only. This score is not a diagnosis and must not be used as the sole basis for clinical decision-making.",
+    }),
+  ).toBeVisible();
   await card.getByLabel(/^Age/).fill("50");
   await card.getByLabel(/^AST/).fill("40");
   await card.getByLabel(/^ALT/).fill("25");
