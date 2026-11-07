@@ -1,6 +1,6 @@
 "use client";
 
-import { Calculator } from "lucide-react";
+import { Calculator, TriangleAlert } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
@@ -12,6 +12,10 @@ const FIELDS = [
   { key: "alt", label: "ALT", unit: "U/L" },
   { key: "platelets", label: "Platelets", unit: "×10⁹/L" },
 ] as const;
+
+/** Wording asked for by the team's clinical reviewers (7 Nov 2026); shown whenever the calculator is open. */
+export const FIB4_DISCLAIMER =
+  "For clinician assistance only. This score is not a diagnosis and must not be used as the sole basis for clinical decision-making.";
 
 /**
  * Works out FIB-4 from four values the clinician types from the report. It shows the number only: no threshold, no
@@ -49,6 +53,13 @@ export function Fib4Calculator({
         FIB-4 calculator
       </summary>
       <div className="mt-4 flex flex-col gap-3">
+        <p
+          role="note"
+          className="flex items-start gap-2 rounded-lg border border-warn/30 bg-warn-soft px-3 py-2.5 text-sm font-semibold text-warn"
+        >
+          <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{FIB4_DISCLAIMER}</span>
+        </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {FIELDS.map((f) => (
             <label key={f.key} className="flex flex-col gap-1.5">
